@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4); /* 背景变透明点 */
+  background: rgba(0, 0, 0, 0.2); /* 背景变透明点 */
   display: flex;
   justify-content: flex-end; /* 让抽屉靠右 */
   z-index: 1000;
@@ -10,7 +10,9 @@
 
 /* 抽屉面板样式 */
 .modal-content {
-  background: #1e1b24; /* 稍微加深底色 */
+  background:rgba(30, 27, 36, 0.85); /* 稍微加深底色 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* 兼容 Safari */
   width: 100%;
   max-width: 400px; /* 抽屉宽度 */
   height: 100%;     /* 撑满全高 */
@@ -157,6 +159,8 @@ textarea:focus {
 
 /* 底部按钮固定区 */
 .modal-footer {
+  background: rgba(30, 27, 36, 0.9);
+  backdrop-filter: blur(12px);
   padding: 20px 25px;
   border-top: 1px solid rgba(194, 163, 95, 0.2);
   display: flex;
@@ -202,4 +206,132 @@ textarea:focus {
 .slide-right-leave-to {
   transform: translateX(100%);
   opacity: 0;
+}
+
+.answer-box {
+  width: 100%;
+  height: 250px;
+  background: #0a0a0c;
+  color: #e0e0e0; /* 稍微提亮一点基础文字颜色 */
+  border: 1px solid #333; /* 边框稍微柔和一点 */
+  border-radius: 16px;
+  padding: 20px 24px;
+  font-size: 15px;
+  line-height: 1.8;
+  text-align: left;
+  overflow-y: auto;
+  /* 移除 white-space: pre-wrap，因为 Markdown 会自动生成 <p> 标签 */
+}
+
+/* === Markdown 内部样式美化 (塔罗神秘主题) === */
+.markdown-body :deep(p) {
+  margin-top: 0;
+  margin-bottom: 1em;
+  letter-spacing: 0.5px;
+}
+
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+/* 强调文字：例如大阿卡纳牌名，用暗金色高亮 */
+.markdown-body :deep(strong) {
+  color: #d4af37; /* 塔罗金 */
+  font-weight: 600;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+}
+
+/* 各级标题：增加神秘感 */
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  color: #fff;
+  margin-top: 1.2em;
+  margin-bottom: 0.8em;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 4px;
+}
+
+.markdown-body :deep(h3) {
+  font-size: 1.1em;
+  color: #c0a060;
+}
+
+/* 列表样式 */
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin-top: 0;
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.markdown-body :deep(li) {
+  margin-bottom: 0.5em;
+}
+
+/* 引用块（AI 有时会用引用块来说出牌意箴言） */
+.markdown-body :deep(blockquote) {
+  border-left: 3px solid #d4af37;
+  margin: 1em 0;
+  padding-left: 1em;
+  color: #a0a0a0;
+  font-style: italic;
+  background: rgba(255,255,255,0.03);
+  padding: 10px 15px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* === 光标动画 (需要用 :deep，因为它是动态拼接到 html 里的) === */
+.markdown-body :deep(.cursor) {
+  display: inline-block;
+  width: 6px; /* 稍微加宽一点，像真的打字机 */
+  height: 1em;
+  background-color: #fff;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink { 
+  0%, 100% { opacity: 1; } 
+  50% { opacity: 0; } 
+}
+
+/* 滚动条美化 */
+.answer-box::-webkit-scrollbar {
+  width: 6px;
+}
+.answer-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+.answer-box::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+.answer-box::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* --- 移动端适配 --- */
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-end; /* 让抽屉在手机端靠底部对齐 */
+    justify-content: center;
+  }
+
+  .modal-content {
+    max-width: 100%; 
+    height: 65vh; /* 手机端只占屏幕高度的 65%，留下 35% 看牌 */
+    border-left: none; /* 取消左边框 */
+    border-top: 1px solid #c2a35f; /* 改为顶部边框 */
+    border-radius: 20px 20px 0 0; /* 顶部加个圆角，看起来更像底部弹窗 */
+  }
+
+  /* 移动端动画最好从下往上滑，你可以配合 Vue/React 的 transition 稍微改一下动画 */
+  .slide-right-enter-from,
+  .slide-right-leave-to {
+    transform: translateY(100%); /* 在手机端改为向下位移 */
+    opacity: 0;
+  }
 }

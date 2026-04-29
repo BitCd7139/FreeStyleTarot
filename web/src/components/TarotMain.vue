@@ -8,43 +8,23 @@
     >
       <!-- 牌阵舞台 -->
       <div class="stage" ref="stage">
-        <div 
-          v-for="(card, index) in drawnCards" 
+        <Card 
+          v-for="card in drawnCards" 
           :key="card.id"
-          class="card-item"
-          :class="{ 'dragging': activeCard?.id === card.id, 'resizing': isResizing }"
-          :style="{ 
-            left: card.x + 'px', 
-            top: card.y + 'px',
-            width: baseWidth + 'px',
-            height: cardHeight + 'px',
-            zIndex: activeCard?.id === card.id ? 1000 : index 
-          }"
-          @mousedown.stop="onMouseDownExisting(card, $event)"
-        >
-          <!-- 卡牌图片 -->
-          <div class="card-inner">
-            <img 
-              :src="card.isRevealed ? getCardUrl(card.name) : getCardUrl('back')" 
-              :class="{ 'reversed': card.isReversed && card.isRevealed }"
-              class="tarot-img"
-              draggable="false"
-            />
-            <div v-if="card.isRevealed" class="order-badge">{{ card.order }}</div>
-          </div>
-  
-          <!-- 四角缩放手柄 -->
-          <div class="resizer nw" @mousedown.stop="onMouseDownResize"></div>
-          <div class="resizer ne" @mousedown.stop="onMouseDownResize"></div>
-          <div class="resizer sw" @mousedown.stop="onMouseDownResize"></div>
-          <div class="resizer se" @mousedown.stop="onMouseDownResize"></div>
-        </div>
+          :card="card"
+          :width="baseWidth"
+          :height="cardHeight"
+          :isActive="activeCard?.id === card.id"
+          :isGlobalResizing="isResizing"
+          @drag-start="onMouseDownExisting"
+          @resize-start="onMouseDownResize"
+        />
       </div>
   
       <!-- 左下角牌堆 -->
       <div class="card-pile" @mousedown.stop="onMouseDownPile">
         <div class="pile-wrapper" :style="{ width: baseWidth + 'px', height: cardHeight + 'px' }">
-          <img :src="getCardUrl('back')" alt="Card Back" class="pile-back" draggable="false" />
+          <img :src="backCardUrl" alt="Card Back" class="pile-back" draggable="false" />
           <div class="pile-shadow"></div>
         </div>
         <span class="pile-label">长按拖拽抽取</span>
@@ -55,7 +35,7 @@
         完成抽取 ({{ drawnCards.length }})
       </button>
   
-      <!-- 引入刚刚拆分出去的弹窗组件 -->
+      <!-- 弹窗组件 -->
       <SubmitModal 
         v-model:showModal="showModal"
         v-model:question="question"
@@ -63,17 +43,26 @@
         :isSubmitDisabled="isSubmitDisabled"
         @submitToBackend="submitToBackend"
       />
+
+      <AnswerModal 
+        v-model:showModal="showAnswerModal"
+        :fullAnswer="backendAnswer"
+        :drawnCards="drawnCards"
+        :cardWidth="baseWidth"
+        :cardHeight="cardHeight"
+       />
     </div>
   </template>
   
   <script setup>
   import { ref, computed } from 'vue';
   import axios from 'axios';
-  // 引入拆分出去的组件 (假设它俩在同一个文件夹)
-  import SubmitModal from './SubmitModal.vue'; 
+  import SubmitModal from './SubmitModal.vue';
+  import AnswerModal from './AnswerModal.vue';
+  import Card from './Card.vue'; // 引入刚刚抽离的卡牌组件
   
   // 1. 基础配置
-  const ASPECT_RATIO = 1.618; // 黄金比例
+  const ASPECT_RATIO = 1.75;
   const allCardNames = ["aceofcups", "aceofpentacles", "aceofswords", "aceofwands", "death", "eightofcups", "eightofpentacles", "eightofswords", "eightofwands", "fiveofcups", "fiveofpentacles", "fiveofswords", "fiveofwands", "fourofcups", "fourofpentacles", "fourofswords", "fourofwands", "judgement", "justice", "kingofcups", "kingofpentacles", "kingofswords", "kingofwands", "knightofcups", "knightofpentacles", "knightofswords", "knightofwands", "nineofcups", "nineofpentacles", "nineofswords", "nineofwands", "pageofcups", "pageofpentacles", "pageofswords", "pageofwands", "queenofcups", "queenofpentacles", "queenofswords", "queenofwands", "sevenofcups", "sevenofpentacles", "sevenofswords", "sevenofwands", "sixofcups", "sixofpentacles", "sixofswords", "sixofwands", "temperance", "tenofcups", "tenofpentacles", "tenofswords", "tenofwands", "thechariot", "thedevil", "theemperor", "theempress", "thefool", "thehangedman", "thehermit", "thehierophant", "thehighpriestess", "TheLovers", "themagician", "themoon", "thestar", "thestrength", "thesun", "thetower", "theworld", "threeofcups", "threeofpentacles", "threeofswords", "threeofwands", "twoofcups", "twoofpentacles", "twoofswords", "twoofwands", "wheeloffortune"];
   
   // 2. 响应式状态
@@ -83,12 +72,14 @@
   const activeCard = ref(null);
   const showModal = ref(false);
   const question = ref('');
+
+  const showAnswerModal = ref(false);
+  const backendAnswer = ref('');
   
-  // （注：原代码模板中用到了 isSubmitDisabled，但 Script 中未定义，为不改动原逻辑，这里补充定义一个以防报错）
   const isSubmitDisabled = computed(() => false); 
   
-  // 尺寸控制
-  const baseWidth = ref(120); // 初始宽度
+  // 尺寸控制 (全局状态)
+  const baseWidth = ref(120); 
   const cardHeight = computed(() => baseWidth.value * ASPECT_RATIO);
   
   // 交互状态
@@ -103,19 +94,17 @@
     backgroundPosition: 'center'
   }));
   
-  const getCardUrl = (name) => {
-    if (name === 'back') return new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;
-    const ext = name === 'TheLovers' ? 'jpg' : 'jpeg';
-    return new URL(`../assets/tarots/${name}.${ext}`, import.meta.url).href;
-  };
+  // 牌堆背面的图片URL（卡牌内部的获取逻辑已移至 Card.vue）
+  const backCardUrl = new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;
   
   const getRelativeCoords = (e) => {
     const rect = stage.value.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
   
-  // 4. 交互逻辑：缩放
+  // 4. 交互逻辑：接收缩放事件
   const onMouseDownResize = (e) => {
+    if (showModal.value || showAnswerModal.value) return; 
     isResizing.value = true;
     resizeStartData = {
       x: e.clientX,
@@ -123,8 +112,10 @@
     };
   };
   
-  // 5. 交互逻辑：抽取与拖拽
+  // 5. 交互逻辑：抽取与接收拖拽事件
   const onMouseDownPile = (e) => {
+    if (showModal.value || showAnswerModal.value) return; 
+
     if (availableCards.value.length === 0) return;
     
     const coords = getRelativeCoords(e);
@@ -145,30 +136,31 @@
   };
   
   const onMouseDownExisting = (card, e) => {
+    if (showModal.value || showAnswerModal.value) return; 
+
     activeCard.value = card;
     const coords = getRelativeCoords(e);
     dragOffset = { x: coords.x - card.x, y: coords.y - card.y };
   };
   
+  // 鼠标全局移动监听
   const handleMouseMove = (e) => {
-    // 处理缩放
     if (isResizing.value) {
       const deltaX = e.clientX - resizeStartData.x;
       const newWidth = resizeStartData.width + deltaX;
-      // 限制缩放范围：80px 到 400px
       if (newWidth >= 80 && newWidth <= 400) {
         baseWidth.value = newWidth;
       }
       return;
     }
   
-    // 处理拖拽
     if (!activeCard.value) return;
     const coords = getRelativeCoords(e);
     activeCard.value.x = coords.x - dragOffset.x;
     activeCard.value.y = coords.y - dragOffset.y;
   };
   
+  // 鼠标松开监听
   const handleMouseUp = () => {
     if (isResizing.value) {
       isResizing.value = false;
@@ -176,7 +168,6 @@
     }
   
     if (activeCard.value) {
-      // 如果是新抽取的牌，则翻面
       if (!activeCard.value.isRevealed) {
         const randomIndex = Math.floor(Math.random() * availableCards.value.length);
         activeCard.value.name = availableCards.value.splice(randomIndex, 1)[0];
@@ -198,25 +189,37 @@
         x: Math.round(card.x),
         y: Math.round(card.y),
         orientation: card.isReversed ? 'reversed' : 'upright',
-        meaning: card.meaning.trim() // 【新增】将用户填写的含义发给后端
+        meaning: card.meaning.trim() 
       }))
     };
+    
   
     try {
-      // 建议：测试阶段可以先打印看看 payload 长什么样
       console.log("Submitting payload:", payload);
-      await axios.post('http://localhost:8080/api/tarot', payload);
-      alert("契约已成，命运的齿轮开始转动...");
+    
+      // 发送请求给后端
+      const response = await axios.post('/api/predict', payload);
+    
+      // 假设后端返回格式为 { data: { code: 200, answer: "命运的齿轮..." } }
+      if (response.data && response.data.code === 200) {
+      // 1. 关闭提交面板
       showModal.value = false;
-    } catch (error) {
-      console.error(error);
-      alert("无法连接至命运之门（后端错误）");
+      
+      // 2. 将后端内容传递给 AnswerModal 并打开它
+      backendAnswer.value = response.data.answer;
+      showAnswerModal.value = true;
+    } else {
+      alert("后端返回异常：" + (response.data.message || '未知错误'));
     }
+  } catch (error) {
+    console.error(error);
+    alert("请求超时或后端错误");
+  }
   };
   </script>
   
   <style scoped>
-  /* 这里保留抽牌舞台专用的样式 */
+  /* ==================== 布局级与组件级样式 ==================== */
   .tarot-container {
     width: 100vw;
     height: 100vh;
@@ -232,87 +235,7 @@
     position: absolute;
   }
   
-  /* 卡牌基础样式 */
-  .card-item {
-    position: absolute;
-    cursor: grab;
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  
-  .card-item.dragging {
-    cursor: grabbing;
-    transform: scale(1.02);
-    filter: brightness(1.1);
-  }
-  
-  .card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    overflow: visible;
-  }
-  
-  .tarot-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-    object-fit: cover;
-    pointer-events: none;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .reversed {
-    transform: rotate(180deg);
-  }
-  
-  /* 缩放手柄样式 */
-  .resizer {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    z-index: 10;
-    opacity: 0;
-    transition: opacity 0.3s, background 0.2s;
-  }
-  
-  .card-item:hover .resizer {
-    opacity: 1;
-  }
-  
-  .resizer:hover {
-    background: #fff;
-    box-shadow: 0 0 10px #fff;
-  }
-  
-  /* 手柄位置 */
-  .nw { top: -8px; left: -8px; cursor: nwse-resize; }
-  .ne { top: -8px; right: -8px; cursor: nesw-resize; }
-  .sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
-  .se { bottom: -8px; right: -8px; cursor: nwse-resize; }
-  
-  .order-badge {
-    position: absolute;
-    top: -12px;
-    right: -12px;
-    background: linear-gradient(135deg, #ffd700, #b8860b);
-    color: #000;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    border: 2px solid #000;
-  }
-  
-  /* 牌堆 */
+  /* 牌堆样式 */
   .card-pile {
     position: absolute;
     bottom: 40px;
@@ -358,7 +281,7 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
   
-  /* 按钮 */
+  /* 完成按钮样式 */
   .finish-btn {
     position: absolute;
     bottom: 50px;

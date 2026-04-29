@@ -1,5 +1,4 @@
 <template>
-    <!-- 问题输入及牌阵定义抽屉（右侧） -->
     <Transition name="slide-right">
       <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
         <div class="modal-content">
@@ -10,6 +9,15 @@
           
           <!-- 核心滚动区域 -->
           <div class="modal-body">
+            <!-- 新增：迷你牌阵预览组件 -->
+            <MiniTarot 
+              :drawnCards="drawnCards"
+              :cardWidth="cardWidth"
+              :cardHeight="cardHeight"
+              :containerWidth="370"  
+              :containerHeight="180" 
+            />
+  
             <!-- 第一部分：问题输入 -->
             <div class="form-group">
               <textarea v-model="question" placeholder="请在此输入你的困惑，例如：我近期的事业运势如何？"></textarea>
@@ -38,10 +46,12 @@
   
           <!-- 第三部分：固定在底部的操作按钮 -->
           <div class="modal-footer">
-            <button class="cancel-btn" @click="showModal = false">返回调整</button>
-            <button class="confirm-btn" @click="submitToBackend" :disabled="isSubmitDisabled">
-              确认提交
-            </button>
+            <div class="modal-btns">
+              <button class="cancel-btn" @click="showModal = false">返回调整</button>
+              <button class="confirm-btn" @click="submitToBackend" :disabled="isSubmitDisabled">
+                确认提交
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -50,33 +60,33 @@
   
   <script setup>
   import { defineModel, defineProps, defineEmits } from 'vue';
+  import MiniTarot from './MiniTarot.vue'; // 引入刚才抽离的组件
   
-  // 使用 defineModel 接收父组件传来的变量，这允许我们在不改变量名的前提下直接保持双向绑定
   const showModal = defineModel('showModal');
   const question = defineModel('question');
   const drawnCards = defineModel('drawnCards');
   
-  // 接收原代码模板中用到的 disabled 状态
-  const props = defineProps(['isSubmitDisabled']);
+  // 接收外部传来的状态，以及为了渲染迷你牌阵需要的宽高等比参数
+  const props = defineProps({
+    isSubmitDisabled: Boolean,
+    cardWidth: { type: Number, default: 120 },
+    cardHeight: { type: Number, default: 210 }
+  });
   
-  // 定义向父组件发送提交请求的事件
   const emit = defineEmits(['submitToBackend']);
   
-  // 保持变量名不变，当点击确认时，通知父组件去执行真正的 submitToBackend
   const submitToBackend = () => {
     emit('submitToBackend');
   };
   
-  // 弹窗内部需要预览图片，所以原封不动保留这个工具函数
   const getCardUrl = (name) => {
     if (name === 'back') return new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;
-    const ext = name === 'TheLovers' ? 'jpg' : 'jpeg';
+    const ext = 'jpeg';
     return new URL(`../assets/tarots/${name}.${ext}`, import.meta.url).href;
   };
   </script>
   
   <style scoped>
-  /* 弹窗专属样式提取 */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -89,51 +99,70 @@
   
   .modal-content {
     background: #151518;
-    padding: 40px;
+    padding: 30px 40px;
     border-radius: 24px;
     width: 450px;
+    /* 限制最大高度，配合内部滚动 */
+    max-height: 90vh; 
+    display: flex;
+    flex-direction: column;
     border: 1px solid #333;
     text-align: center;
   }
   
-  .modal-hint {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 20px;
+  .modal-header { margin-bottom: 10px; }
+  .modal-hint { color: #666; font-size: 14px; margin-bottom: 15px; }
+  
+  /* 中间增加内部滚动条，避免内容过多时弹窗撑破屏幕 */
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px; /* 留出滚动条空间 */
   }
+  
+  /* 隐藏自带的丑陋滚动条（针对webkit浏览器） */
+  .modal-body::-webkit-scrollbar { width: 6px; }
+  .modal-body::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
   
   textarea {
     width: 100%;
-    height: 120px;
+    height: 100px;
     background: #0a0a0c;
     color: #fff;
     border: 1px solid #333;
     border-radius: 12px;
     padding: 15px;
     resize: none;
-    font-size: 16px;
-    margin-bottom: 25px;
+    font-size: 15px;
+    margin-bottom: 20px;
   }
   
-  .modal-btns {
+  .card-item {
     display: flex;
+    align-items: center;
+    background: #1a1a1f;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
     gap: 15px;
   }
+  .card-preview { position: relative; width: 40px; height: 70px; }
+  .card-preview img { width: 100%; height: 100%; border-radius: 4px; object-fit: cover;}
+  .card-preview img.is-reversed { transform: rotate(180deg); }
+  .card-order { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; font-weight: bold;}
+  .card-input { flex: 1; display: flex; align-items: center; gap: 10px;}
+  .card-input input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #0a0a0c; color: #fff;}
+  .orientation-tag { font-size: 12px; color: #888; background: #222; padding: 4px 8px; border-radius: 6px; }
   
-  .modal-btns button {
-    flex: 1;
-    padding: 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    border: none;
+  .modal-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #222;
   }
-  
+  .modal-btns { display: flex; gap: 15px; }
+  .modal-btns button { flex: 1; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s;}
   .cancel-btn { background: #222; color: #999; }
+  .cancel-btn:hover { background: #333; color: #fff; }
   .confirm-btn { background: #fff; color: #000; }
-  .confirm-btn:disabled { opacity: 0.3; }
-  
-  /* 动画 */
-  .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-  .fade-enter-from, .fade-leave-to { opacity: 0; }
+  .confirm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
   </style>

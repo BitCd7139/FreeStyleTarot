@@ -1,9 +1,9 @@
 <template>
-  <TarotTable/>
+  <TarotMain/>
 </template>
 
 <script setup>
-import TarotTable from './components/TarotTable.vue'
+import TarotMain from './components/TarotMain.vue'
 </script>
 
 <style>

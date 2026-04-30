@@ -207,7 +207,7 @@ const closeModal = () => {
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  padding: 20px; /* 移动端边距 */
+  padding: 20px; 
 }
 
 /* 弹窗主体 */
@@ -244,9 +244,9 @@ const closeModal = () => {
   display: flex;
   flex-direction: column;
   flex: 1; 
-  overflow: hidden; /* 极其重要：确保内部滚动条生效 */
+  overflow: hidden; 
   gap: 20px;
-  min-height: 0; /* 修复 Flexbox 内部溢出的经典 Bug */
+  min-height: 0; 
 }
 
 /* 牌阵容器 */
@@ -338,4 +338,56 @@ button:disabled {
 /* 动画 */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+
+@media (max-width: 768px) {
+  /* 解决问题 1: 减小页边距 */
+  .modal-overlay {
+    padding: 10px; /* 缩小外层蒙版边距 */
+  }
+
+  .modal-content.answer-modal {
+    padding: 15px; /* 缩小弹窗内边距 */
+    height: 95vh;  /* 在移动端占据更多高度 */
+    border-radius: 15px;
+  }
+
+  .modal-header {
+    margin-bottom: 10px;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px; /* 缩小标题 */
+  }
+
+  /* 解决问题 2: 提高文本框高度 */
+  /* 通过减小上方牌阵的高度，给下方的 answer-box 腾出更多空间 */
+  .stage-container {
+    height: 160px !important; /* 强制减小牌阵高度 */
+    margin-bottom: 5px;
+  }
+
+  /* 调整解析区域的内边距和字号，让内容显得更多 */
+  .answer-box {
+    padding: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* 优化底部按钮：如果三个按钮并排太挤，可以改为垂直排列或缩小间距 */
+  .modal-footer {
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .modal-footer button {
+    padding: 10px 5px;
+    font-size: 13px;
+    /* 如果想让“完成”按钮占满一行，可以取消下面注释 */
+    /* .btn-primary { flex: 100%; } */
+  }
+}
+
 </style>

@@ -287,6 +287,12 @@ const getCardUrl = (name) => {
   justify-content: center;
 }
 
+.modal-body {
+  flex: 1;
+  overflow-y: hidden;      /* 内容多了就在内部垂直滚动 */
+  overflow-x: hidden;    /* 彻底杜绝左右滚动 */
+  padding: 20px;         /* 桌面端内边距 */
+}
 
 .modal-btns {
   display: flex;
@@ -297,11 +303,28 @@ const getCardUrl = (name) => {
 /* 让两个按钮都具备 flex: 1，它们会自动平分剩余空间 */
 .cancel-btn, .confirm-btn {
   flex: 1; 
-  padding: 12px 0; /* 增加上下内边距，让按钮看起来更大气 */
+  padding: 12px 0; /* 增加上下内边距 */
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+/* 5. 移动端适配：减少内边距，让内容更宽 */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0;         /* 移动端去掉最外层 padding，改为由 content 控制 */
+  }
+  
+  .modal-content {
+    width: 100%;
+    height: 100%;       /* 移动端全屏或半全屏 */
+    max-height: 100vh;
+    border-radius: 0;   /* 手机上通常不需要圆角，或者只给顶部圆角 */
+  }
+
+  .modal-body {
+    padding: 15px;      /* 手机端内边距缩小，留出更多空间给内容 */
+  }
+}
 </style>

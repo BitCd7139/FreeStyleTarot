@@ -192,7 +192,7 @@
     if (isResizing.value) {
       const deltaX = e.clientX - resizeStartData.x;
       const newWidth = resizeStartData.width + deltaX;
-      if (newWidth >= 80 && newWidth <= 400) {
+      if (newWidth >= 40 && newWidth <= 400) {
         baseWidth.value = newWidth;
       }
       return;

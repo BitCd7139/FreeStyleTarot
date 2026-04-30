@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.2); /* 背景变透明点 */
+  background: rgba(0, 0, 0, 0.5); /* 背景变透明点 */
   display: flex;
   justify-content: flex-end; /* 让抽屉靠右 */
   z-index: 1000;
@@ -10,17 +10,81 @@
 
 /* 抽屉面板样式 */
 .modal-content {
-  background:rgba(30, 27, 36, 0.85); /* 稍微加深底色 */
+  background: rgba(30, 27, 36, 0.9); /* 稍微增加不透明度 */
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px); /* 兼容 Safari */
-  width: 100%;
-  max-width: 400px; /* 抽屉宽度 */
-  height: 100%;     /* 撑满全高 */
+  -webkit-backdrop-filter: blur(12px);
+  width: 25vw;        /* PC端占据 1/4 屏幕宽度 */
+  min-width: 400px;    /* 保证在窄屏下不至于太窄 */
+  height: 100%;
   display: flex;
-  flex-direction: column; /* 纵向弹性布局 */
-  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.7);
-  border-left: 1px solid #c2a35f;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+  border-left: 1px solid rgba(194, 163, 95, 0.4);
+  transition: width 0.3s ease;
 }
+
+/* 自动识别区域样式 */
+.detector-box {
+  background: rgba(194, 163, 95, 0.08);
+  border: 1px solid rgba(194, 163, 95, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 10px;
+}
+
+.detector-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.detector-content p {
+  margin: 0;
+  color: #e5d8b0; /* 统一为淡金色文字，不再是黑色 */
+  font-size: 14px;
+}
+
+/* 按钮样式统一化 */
+.detector-actions {
+  display: flex;
+  gap: 10px;
+}
+.btn-mini {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #c2a35f;
+}
+
+.btn-yes {
+  background: #c2a35f;
+  color: #1e1b24;
+}
+
+.btn-yes:hover {
+  background: #d4af37;
+  box-shadow: 0 0 10px rgba(194, 163, 95, 0.4);
+}
+
+.btn-no {
+  background: transparent;
+  color: #c2a35f;
+}
+
+.btn-no:hover {
+  background: rgba(194, 163, 95, 0.15);
+}
+
+.custom-text {
+  color: #a89f91 !important;
+  font-style: italic;
+}
+
 
 /* 头部固定 */
 .modal-header {

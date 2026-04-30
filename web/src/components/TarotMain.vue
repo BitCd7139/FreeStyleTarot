@@ -6,6 +6,10 @@
       @mouseup="handleMouseUp"
       @mouseleave="handleMouseUp"
     >
+      <!-- 垃圾桶组件 -->
+      <TrashCan :isHovered="isNearTrash"
+                @clear-all="clearAllCards"  />
+
       <!-- 牌阵舞台 -->
       <div class="stage" ref="stage">
         <Card 
@@ -41,6 +45,8 @@
         v-model:question="question"
         v-model:drawnCards="drawnCards"
         :isSubmitDisabled="isSubmitDisabled"
+        :cardWidth="baseWidth"     
+        :cardHeight="cardHeight"  
         @submitToBackend="submitToBackend"
       />
 
@@ -59,12 +65,14 @@
   import axios from 'axios';
   import SubmitModal from './SubmitModal.vue';
   import AnswerModal from './AnswerModal.vue';
-  import Card from './Card.vue'; // 引入刚刚抽离的卡牌组件
+  import Card from './Card.vue'; 
+  import TrashCan from './TrashCan.vue';
+
   
   // 1. 基础配置
   const ASPECT_RATIO = 1.75;
   const allCardNames = ["aceofcups", "aceofpentacles", "aceofswords", "aceofwands", "death", "eightofcups", "eightofpentacles", "eightofswords", "eightofwands", "fiveofcups", "fiveofpentacles", "fiveofswords", "fiveofwands", "fourofcups", "fourofpentacles", "fourofswords", "fourofwands", "judgement", "justice", "kingofcups", "kingofpentacles", "kingofswords", "kingofwands", "knightofcups", "knightofpentacles", "knightofswords", "knightofwands", "nineofcups", "nineofpentacles", "nineofswords", "nineofwands", "pageofcups", "pageofpentacles", "pageofswords", "pageofwands", "queenofcups", "queenofpentacles", "queenofswords", "queenofwands", "sevenofcups", "sevenofpentacles", "sevenofswords", "sevenofwands", "sixofcups", "sixofpentacles", "sixofswords", "sixofwands", "temperance", "tenofcups", "tenofpentacles", "tenofswords", "tenofwands", "thechariot", "thedevil", "theemperor", "theempress", "thefool", "thehangedman", "thehermit", "thehierophant", "thehighpriestess", "TheLovers", "themagician", "themoon", "thestar", "thestrength", "thesun", "thetower", "theworld", "threeofcups", "threeofpentacles", "threeofswords", "threeofwands", "twoofcups", "twoofpentacles", "twoofswords", "twoofwands", "wheeloffortune"];
-  
+
   // 2. 响应式状态
   const stage = ref(null);
   const drawnCards = ref([]);
@@ -84,6 +92,7 @@
   
   // 交互状态
   const isResizing = ref(false);
+  const isNearTrash = ref(false);
   let dragOffset = { x: 0, y: 0 };
   let resizeStartData = { x: 0, width: 0 };
   
@@ -96,7 +105,41 @@
   
   // 牌堆背面的图片URL（卡牌内部的获取逻辑已移至 Card.vue）
   const backCardUrl = new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;
-  
+
+  const removeCard = (cardId) => {
+    const index = drawnCards.value.findIndex(c => c.id === cardId);
+    if (index !== -1) {
+      const card = drawnCards.value[index];
+      
+      // 如果卡牌已经有名字了，把它还给牌堆池
+      if (card.name) {
+        availableCards.value.push(card.name);
+      }
+      
+      // 从已抽取的牌中移除
+      drawnCards.value.splice(index, 1);
+      
+      // 关键：重新排序
+      drawnCards.value.forEach((card, idx) => {
+        card.order = idx + 1;
+      });
+    }
+  };
+
+  const clearAllCards = () => {
+  if (drawnCards.value.length === 0) return;
+    drawnCards.value.forEach(card => {
+      if (card.name) {
+        availableCards.value.push(card.name);
+      }
+    });
+    
+    drawnCards.value = [];
+    activeCard.value = null;
+    
+    console.log("所有卡牌已清空");
+};
+
   const getRelativeCoords = (e) => {
     const rect = stage.value.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -158,6 +201,13 @@
     const coords = getRelativeCoords(e);
     activeCard.value.x = coords.x - dragOffset.x;
     activeCard.value.y = coords.y - dragOffset.y;
+
+    const trashX = window.innerWidth - 80; 
+    const trashY = 80;
+    const distance = Math.sqrt(
+      Math.pow(e.clientX - trashX, 2) + Math.pow(e.clientY - trashY, 2)
+    );
+    isNearTrash.value = distance < 100;
   };
   
   // 鼠标松开监听
@@ -167,14 +217,18 @@
       return;
     }
   
-    if (activeCard.value) {
-      if (!activeCard.value.isRevealed) {
-        const randomIndex = Math.floor(Math.random() * availableCards.value.length);
-        activeCard.value.name = availableCards.value.splice(randomIndex, 1)[0];
-        activeCard.value.isReversed = Math.random() > 0.5;
-        activeCard.value.isRevealed = true;
+    if (isNearTrash.value) {
+      removeCard(activeCard.value.id);
+    } else {
+      if (activeCard.value) {
+        if (!activeCard.value.isRevealed) {
+          const randomIndex = Math.floor(Math.random() * availableCards.value.length);
+          activeCard.value.name = availableCards.value.splice(randomIndex, 1)[0];
+          activeCard.value.isReversed = Math.random() > 0.5;
+          activeCard.value.isRevealed = true;
+        }
+        activeCard.value = null;
       }
-      activeCard.value = null;
     }
   };
   
@@ -219,7 +273,7 @@
   </script>
   
   <style scoped>
-  /* ==================== 布局级与组件级样式 ==================== */
+  /* 布局级与组件级样式 */
   .tarot-container {
     width: 100vw;
     height: 100vh;

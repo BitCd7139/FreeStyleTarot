@@ -79,7 +79,7 @@
   cursor: grabbing;
   transform: scale(1.02);
   filter: brightness(1.1);
-  z-index: 9999 !important; /* 拖拽时强制在最顶层 */
+  z-index: 999;
 }
 
 .card-inner {
@@ -87,7 +87,7 @@
   width: 100%;
   height: 100%;
   border-radius: 6px; /* 圆角稍微收敛一点 */
-  box-shadow: 0 6px 20px rgba(0,0,0,0.6); /* 阴影改柔和一些，减少框体感 */
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
   overflow: visible;
 }
 
@@ -95,11 +95,9 @@
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  /* 关键修复：去掉 cover，让图片强制完整填满区域 */
   object-fit: 100% 100%; 
   display: block;
   pointer-events: none;
-  /* 去掉这里的 border，隐藏硬边框 */
   /* border: 1px solid rgba(255, 255, 255, 0.1); */
 }
 
@@ -126,7 +124,7 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ==================== 缩放手柄样式 ==================== */
+/* 缩放手柄样式 */
 .resizer {
   position: absolute;
   /* 尺寸从 16px 缩小到 10px */

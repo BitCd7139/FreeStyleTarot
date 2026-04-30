@@ -289,9 +289,20 @@ const getCardUrl = (name) => {
 
 .modal-body {
   flex: 1;
-  overflow-y: hidden;      /* 内容多了就在内部垂直滚动 */
+  overflow-y: auto;      /* 内容多了就在内部垂直滚动 */
   overflow-x: hidden;    /* 彻底杜绝左右滚动 */
   padding: 20px;         /* 桌面端内边距 */
+
+  /* 针对 Chrome, Safari, Edge (WebKit) */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 针对 Firefox */
+  scrollbar-width: none;
+
+  /* 针对 IE 和 老版 Edge */
+  -ms-overflow-style: none;
 }
 
 .modal-btns {

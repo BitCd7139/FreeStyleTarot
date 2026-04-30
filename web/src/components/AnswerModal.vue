@@ -8,26 +8,32 @@
           <p class="modal-hint">塔罗的解答已在此显现</p>
         </div>
         
-        <!-- 增加 ref 用于截图 -->
-        <div class="modal-body" ref="captureArea">
-          <!-- 现场渲染的迷你嵌套牌阵 -->
-          <div class="stage-container">
-            <MiniTarot 
-              :drawnCards="drawnCards" 
-              :cardWidth="cardWidth" 
-              :cardHeight="cardHeight" 
-              :containerWidth="720" 
-              :containerHeight="240" 
-            />
+        <!-- 
+          修改点1：将 scroll 监听和 ref 移到最外层 modal-body。
+          现在牌阵和文字都在同一个滚动区域里，向下滚动时牌阵会被推走。
+        -->
+        <div class="modal-body" ref="scrollContainer" @scroll="handleScroll">
+          
+          <div class="scroll-content" ref="captureArea">
+            <!-- 现场渲染的迷你嵌套牌阵 -->
+            <div class="stage-container">
+              <MiniTarot 
+                :drawnCards="drawnCards" 
+                :cardWidth="cardWidth" 
+                :cardHeight="cardHeight" 
+                :containerWidth="720" 
+                :containerHeight="240" 
+              />
+            </div>
+
+            <!-- 解析展示区域（不再单独带滚动条，靠父级滚动） -->
+            <div class="answer-box">
+                <div class="markdown-body" v-html="parsedAnswer"></div>
+            </div>
           </div>
 
-          <!-- 解析展示区域 -->
-          <div class="answer-box" ref="answerBoxRef" @scroll="handleScroll">
-              <div class="markdown-body" v-html="parsedAnswer"></div>
-          </div>
         </div>
 
-        <!-- 找到 <div class="modal-footer"> 这一块，修改为如下结构 -->
         <div class="modal-footer">
           <button class="btn-secondary" @click="saveScreenshot" :disabled="isStreaming">
             <i class="icon-camera"></i> 保存截图
@@ -60,15 +66,14 @@ const props = defineProps({
   drawnCards: { type: Array, default: () => [] },
   cardWidth: { type: Number, default: 120 },
   cardHeight: { type: Number, default: 210 },
-  // 由父组件传入，标识后端 SSE 是否还在输出
   isStreaming: { type: Boolean, default: false } 
 });
 
-const answerBoxRef = ref(null);
+// 指向新的统排滚动容器
+const scrollContainer = ref(null);
 const captureArea = ref(null);
-const userScrolledUp = ref(false); // 记录用户是否主动向上滚动了
+const userScrolledUp = ref(false); 
 
-// 解析 Markdown 与光标
 const parsedAnswer = computed(() => {
   const rawText = props.isStreaming 
     ? props.fullAnswer + '<span class="cursor">|</span>' 
@@ -78,102 +83,85 @@ const parsedAnswer = computed(() => {
   return DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['class'] });
 });
 
-// 监听答案变化
 watch(() => props.fullAnswer, async () => {
-  if (!answerBoxRef.value) return;
+  if (!scrollContainer.value) return;
   
-  // 只有当用户没有主动向上翻看时，才自动滚动到底部
   if (!userScrolledUp.value) {
     await nextTick();
     scrollToBottom();
   }
 });
 
-// 监听滚动事件，判断用户是否主动往上滑了
 const handleScroll = (e) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
-  // 距离底部超过 50px 视为用户主动向上看，暂停自动滚动
   if (scrollHeight - scrollTop - clientHeight > 50) {
     userScrolledUp.value = true;
   } else {
-    // 滚回底部了，恢复自动滚动
     userScrolledUp.value = false; 
   }
 };
 
 const scrollToBottom = () => {
-  if (answerBoxRef.value) {
-    answerBoxRef.value.scrollTop = answerBoxRef.value.scrollHeight;
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
   }
 };
 
-// 复制功能
 const copyAnswer = async () => {
   try {
-    // 去除 HTML 标签，只复制纯文本
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = parsedAnswer.value;
     const plainText = tempDiv.innerText || tempDiv.textContent;
     
     await navigator.clipboard.writeText(plainText);
-    alert('解析内容已复制到剪贴板'); // 可替换为你的 Message 组件
+    alert('解析内容已复制到剪贴板'); 
   } catch (err) {
     console.error('复制失败', err);
   }
 };
 
-// 截图功能
 const saveScreenshot = async () => {
-  // 1. 获取要截图的原始元素 (即包含标题、牌阵、文字的 modal-content)
   const originalElement = document.querySelector('.answer-modal');
   if (!originalElement) return;
 
   try {
-    // 2. 创建一个克隆节点，用于在“幕后”进行样式重置
     const clone = originalElement.cloneNode(true);
     
-    // 3. 应用“长图专用样式”
     Object.assign(clone.style, {
       position: 'absolute',
       top: '-9999px',
       left: '0',
-      width: originalElement.offsetWidth + 'px', // 保持宽度一致
-      height: 'auto',       // 高度根据内容自适应
-      maxHeight: 'none',    // 去除高度限制
-      overflow: 'visible',  // 允许溢出内容可见
+      width: originalElement.offsetWidth + 'px', 
+      height: 'auto',       
+      maxHeight: 'none',    
+      overflow: 'visible',  
     });
 
-    // 4. 特别处理克隆节点中的滚动区域
-    const clonedAnswerBox = clone.querySelector('.answer-box');
-    if (clonedAnswerBox) {
-      Object.assign(clonedAnswerBox.style, {
-        height: 'auto',      // 展开全部文字
-        maxHeight: 'none',   // 去除限制
-        overflow: 'visible', // 允许溢出
-        border: 'none'       // 可选：截图时去掉文字框内边框，更像一张卡片
+    // 截图修复：由于现在滚动条在 modal-body 上，需要把克隆体的 modal-body 完全展开
+    const clonedBody = clone.querySelector('.modal-body');
+    if (clonedBody) {
+      Object.assign(clonedBody.style, {
+        height: 'auto',      
+        maxHeight: 'none',   
+        overflow: 'visible' 
       });
     }
 
-    // 5. 隐藏克隆节点中的按钮（用户通常不希望截图中包含“关闭”按钮）
     const clonedFooter = clone.querySelector('.modal-footer');
     if (clonedFooter) clonedFooter.style.display = 'none';
 
-    // 6. 将克隆节点挂载到 body，否则无法渲染
     document.body.appendChild(clone);
 
-    // 7. 执行截图
     const canvas = await html2canvas(clone, {
-      backgroundColor: '#151518', // 保持背景色
-      scale: 2,                  // 高清倍率
-      useCORS: true,             // 允许跨域图片
+      backgroundColor: '#151518', 
+      scale: 2,                  
+      useCORS: true,             
       logging: false,
-      windowHeight: clone.scrollHeight // 关键：告诉渲染引擎高度是全长的
+      windowHeight: clone.scrollHeight 
     });
 
-    // 8. 移除克隆节点
     document.body.removeChild(clone);
 
-    // 9. 下载图片
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
@@ -192,7 +180,6 @@ const closeModal = () => {
 </script>
 
 <style scoped>
-/* 0. 基础全局修正：确保所有元素的宽度计算包含 padding 和 border */
 * {
   box-sizing: border-box;
 }
@@ -201,7 +188,7 @@ const closeModal = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85); /* 稍微加深 */
+  background: rgba(0, 0, 0, 0.85); 
   backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
@@ -216,14 +203,14 @@ const closeModal = () => {
   padding: 30px;
   border-radius: 20px;
   width: 900px;
-  max-width: 100%; /* 确保不超出屏幕 */
+  max-width: 100%; 
   height: 90vh;
   max-height: 900px;
   border: 1px solid rgba(212, 175, 55, 0.4);
   box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.1);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 关键：防止整体内容溢出 */
+  overflow: hidden; 
 }
 
 .modal-header {
@@ -238,15 +225,26 @@ const closeModal = () => {
   color: #D4AF37;
   letter-spacing: 2px;
 }
+.modal-hint {
+  color: #888;
+  font-size: 14px;
+  margin-top: 5px;
+}
 
-/* Modal Body 负责包含牌阵和文字 */
+/* === 修改点：Modal Body 现在接管滚动功能 === */
 .modal-body {
+  flex: 1; 
+  overflow-y: auto; /* 开启整体垂直滚动 */
+  overflow-x: hidden;
+  min-height: 0; 
+  padding-right: 8px; /* 留给滚动条的空间 */
+}
+
+/* 统排内容包裹层 */
+.scroll-content {
   display: flex;
   flex-direction: column;
-  flex: 1; 
-  overflow: hidden; 
-  gap: 20px;
-  min-height: 0; 
+  gap: 20px; /* 牌阵和文字的间距 */
 }
 
 /* 牌阵容器 */
@@ -258,15 +256,14 @@ const closeModal = () => {
   border-radius: 12px;
   border: 1px solid rgba(212, 175, 55, 0.3);
   position: relative;
-  overflow: hidden; /* 防止牌阵溢出 */
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-x: auto; /* 如果牌阵过宽，允许横向轻微滑动以免破坏布局 */
 }
 
-/* 解析文本区域 */
+/* === 修改点：解析文本区域不再限制高度，随内容自然撑开 === */
 .answer-box {
-  flex: 1;
   background: #0a0a0c;
   color: #e0e0e0;
   border: 1px solid rgba(212, 175, 55, 0.3);
@@ -274,52 +271,46 @@ const closeModal = () => {
   padding: 24px;
   font-size: 16px;
   line-height: 1.8;
-  overflow-y: auto;
-  word-break: break-word; /* 强制长单词换行，防止溢出 */
+  word-break: break-word; 
 }
 
-/* === 底部按钮组：修复按钮短的问题 === */
 .modal-footer {
   flex-shrink: 0;
   display: flex;
-  width: 100%; /* 确保容器撑满 */
-  gap: 12px;   /* 按钮间距 */
+  width: 100%; 
+  gap: 12px;   
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 统一按钮样式 */
 .modal-footer button {
-  flex: 1;               /* 核心：让所有按钮平分宽度 */
-  display: flex;         /* 开启 flex 让图标和文字居中 */
+  flex: 1;               
+  display: flex;         
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 0;       /* 增加上下高度 */
+  padding: 14px 0;       
   border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;   /* 防止按钮内文字换行 */
+  white-space: nowrap;   
 }
 
-/* 次要按钮样式 */
 .btn-secondary {
   background: rgba(255, 255, 255, 0.05);
   color: #D4AF37;
   border: 1px solid rgba(212, 175, 55, 0.5);
 }
 
-/* 主要按钮样式 */
 .btn-primary {
   background: linear-gradient(135deg, #D4AF37, #AA7700);
   color: #000;
   border: none;
 }
 
-/* 按钮悬停与禁用 */
 button:not(:disabled):hover {
   transform: translateY(-2px);
   filter: brightness(1.2);
@@ -331,63 +322,62 @@ button:disabled {
   filter: grayscale(1);
 }
 
-/* 滚动条美化 */
-.answer-box::-webkit-scrollbar { width: 6px; }
-.answer-box::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
+/* 滚动条美化移到了 modal-body 上 */
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
 
-/* 动画 */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 
+/* === 针对移动端的深度压缩优化 === */
 @media (max-width: 768px) {
-  /* 解决问题 1: 减小页边距 */
+  /* 1. 极致压缩蒙版空白 */
   .modal-overlay {
-    padding: 10px; /* 缩小外层蒙版边距 */
+    padding: 8px; 
   }
 
+  /* 2. 缩小弹窗内边距，让屏幕每一寸都用在刀刃上 */
   .modal-content.answer-modal {
-    padding: 15px; /* 缩小弹窗内边距 */
-    height: 95vh;  /* 在移动端占据更多高度 */
-    border-radius: 15px;
+    padding: 16px 12px; 
+    height: 96vh;  
+    border-radius: 16px;
   }
 
   .modal-header {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
+  .modal-header h3 { font-size: 18px; }
   
-  .modal-header h3 {
-    font-size: 18px; /* 缩小标题 */
-  }
+  .scroll-content { gap: 12px; }
 
-  /* 解决问题 2: 提高文本框高度 */
-  /* 通过减小上方牌阵的高度，给下方的 answer-box 腾出更多空间 */
+  /* 3. 牌阵高度改为自适应缩小，不再傻大个 */
   .stage-container {
-    height: 160px !important; /* 强制减小牌阵高度 */
-    margin-bottom: 5px;
+    height: auto !important; 
+    min-height: 140px; /* 保底高度 */
+    aspect-ratio: 2 / 1; /* 保持宽高比例缩小 */
   }
 
-  /* 调整解析区域的内边距和字号，让内容显得更多 */
+  /* 4. 文字框大幅缩减 Padding，留空间给文字本身 */
   .answer-box {
-    padding: 15px;
+    padding: 12px 10px; /* 紧凑边距 */
     font-size: 14px;
     line-height: 1.6;
+    /* 可选：去掉边框，减少视觉阻碍 */
+    border: none;
+    background: transparent;
   }
 
-  /* 优化底部按钮：如果三个按钮并排太挤，可以改为垂直排列或缩小间距 */
+  /* 5. 按钮底部适配 */
   .modal-footer {
-    flex-wrap: wrap; /* 允许换行 */
+    flex-wrap: wrap; 
     gap: 8px;
     margin-top: 10px;
     padding-top: 10px;
   }
-
   .modal-footer button {
-    padding: 10px 5px;
-    font-size: 13px;
-    /* 如果想让“完成”按钮占满一行，可以取消下面注释 */
-    /* .btn-primary { flex: 100%; } */
+    padding: 12px 4px;
+    font-size: 14px;
   }
 }
-
 </style>

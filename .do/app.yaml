@@ -1,4 +1,13 @@
-name: freestyletarot
+name: free_style_tarot
+static_sites:
+  - name: frontend
+    source_dir: /web
+    build_command: npm install && npm run build
+    output_dir: dist     # Vite 默认输出目录
+    catch_all_errors_path: /index.html
+    routes:
+      - path: /          # 根路径访问前端
+
 services:
   - name: backend
     instance_count: 1
@@ -14,12 +23,3 @@ services:
       - key: PORT
         scope: RUN_TIME
         value: "8080"
-
-static_sites:
-  - name: frontend
-    source_dir: /web
-    build_command: npm install && npm run build
-    output_dir: dist     # Vite 默认输出目录
-    catch_all_errors_path: /index.html
-    routes:
-      - path: /          # 根路径访问前端

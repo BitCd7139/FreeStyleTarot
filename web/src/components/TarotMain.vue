@@ -2,9 +2,10 @@
     <div 
       class="tarot-container" 
       :style="backgroundStyle"
-      @mousemove="handleMouseMove" 
-      @mouseup="handleMouseUp"
-      @mouseleave="handleMouseUp"
+      @pointermove="handlepointerMove" 
+      @pointerup="handlepointerUp"
+      @pointerleave="handlepointerUp"
+      @pointercancel="handlepointerUp"
     >
       <!-- 垃圾桶组件 -->
       <TrashCan :isHovered="isNearTrash"
@@ -20,13 +21,13 @@
           :height="cardHeight"
           :isActive="activeCard?.id === card.id"
           :isGlobalResizing="isResizing"
-          @drag-start="onMouseDownExisting"
-          @resize-start="onMouseDownResize"
+          @drag-start="onpointerDownExisting"
+          @resize-start="onpointerDownResize"
         />
       </div>
   
       <!-- 左下角牌堆 -->
-      <div class="card-pile" @mousedown.stop="onMouseDownPile">
+      <div class="card-pile" @pointerdown.stop="onpointerDownPile">
         <div class="pile-wrapper" :style="{ width: baseWidth + 'px', height: cardHeight + 'px' }">
           <img :src="backCardUrl" alt="Card Back" class="pile-back" draggable="false" />
           <div class="pile-shadow"></div>
@@ -146,7 +147,7 @@
   };
   
   // 4. 交互逻辑：接收缩放事件
-  const onMouseDownResize = (e) => {
+  const onpointerDownResize = (e) => {
     if (showModal.value || showAnswerModal.value) return; 
     isResizing.value = true;
     resizeStartData = {
@@ -156,10 +157,10 @@
   };
   
   // 5. 交互逻辑：抽取与接收拖拽事件
-  const onMouseDownPile = (e) => {
+  const onpointerDownPile = (e) => {
     if (showModal.value || showAnswerModal.value) return; 
 
-    if (availableCards.value.length === 0) return;
+    if (availableCards.value.length === 0 || drawnCards.value.length >= 15) return;
     
     const coords = getRelativeCoords(e);
     const newCard = {
@@ -178,7 +179,7 @@
     dragOffset = { x: baseWidth.value / 2, y: cardHeight.value / 2 };
   };
   
-  const onMouseDownExisting = (card, e) => {
+  const onpointerDownExisting = (card, e) => {
     if (showModal.value || showAnswerModal.value) return; 
 
     activeCard.value = card;
@@ -187,7 +188,7 @@
   };
   
   // 鼠标全局移动监听
-  const handleMouseMove = (e) => {
+  const handlepointerMove = (e) => {
     if (isResizing.value) {
       const deltaX = e.clientX - resizeStartData.x;
       const newWidth = resizeStartData.width + deltaX;
@@ -211,7 +212,7 @@
   };
   
   // 鼠标松开监听
-  const handleMouseUp = () => {
+  const handlepointerUp = () => {
     if (isResizing.value) {
       isResizing.value = false;
       return;
@@ -281,6 +282,7 @@
     position: relative;
     user-select: none;
     overflow: hidden;
+    touch-action: none;
   }
   
   .stage {
@@ -350,6 +352,7 @@
     font-size: 16px;
     transition: all 0.3s;
     z-index: 500;
+    
   }
   
   .finish-btn:hover:not(:disabled) {

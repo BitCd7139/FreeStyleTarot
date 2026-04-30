@@ -6,9 +6,9 @@
         'near-trash': isHovered, 
         'is-pressing': isPressing 
       }"
-      @mousedown="startPress"
-      @mouseup="cancelPress"
-      @mouseleave="cancelPress"
+      @pointerdown="startPress"
+      @pointerup="cancelPress"
+      @pointerleave="cancelPress"
       @touchstart="startPress" 
       @touchend="cancelPress"
     >
@@ -81,6 +81,14 @@
     cursor: pointer;
     user-select: none;
     pointer-events: auto; 
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;             
+    outline: none;                          
+  
+    /* 确保这些也存在 */
+    user-select: none;                       
+    touch-action: none;                      
   }
   
   .icon-wrapper {

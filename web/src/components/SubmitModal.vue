@@ -66,7 +66,7 @@
           <!-- 第二部分：自定义牌阵含义 -->
           <div class="form-group spread-definition">
             <div class="card-list">
-              <div v-for="card in drawnCards" :key="card.id" class="card-item">
+              <div v-for="(card, index) in drawnCards" :key="card.id" class="card-item">
                 <div class="card-preview">
                   <span class="card-order">{{ card.order }}</span>
                   <img :src="getCardUrl(card.name)" :class="{ 'is-reversed': card.isReversed }" alt="tarot" />
@@ -267,6 +267,16 @@ const getCardUrl = (name) => {
 
 /* 调整 textarea 的高度以适应错误提示 */
 .form-group textarea {
+  width: 100%;            
+  box-sizing: border-box;  
+  min-height: 100px;       
+  max-width: 100%;         
+  resize: vertical;       
+  
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
   margin-bottom: 4px;
 }
 
@@ -276,4 +286,22 @@ const getCardUrl = (name) => {
   flex-direction: column;
   justify-content: center;
 }
+
+
+.modal-btns {
+  display: flex;
+  gap: 12px;       /* 两个按钮之间的间距 */
+  width: 100%;
+}
+
+/* 让两个按钮都具备 flex: 1，它们会自动平分剩余空间 */
+.cancel-btn, .confirm-btn {
+  flex: 1; 
+  padding: 12px 0; /* 增加上下内边距，让按钮看起来更大气 */
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
 </style>

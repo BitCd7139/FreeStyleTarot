@@ -103,7 +103,7 @@
   margin: 0;
 }
 
-/* 中间滚动区：使用 flex: 1 占据所有剩余空间 */
+/* 中间滚动区 */
 .modal-body {
   flex: 1;
   overflow-y: auto;
@@ -142,7 +142,7 @@ textarea:focus {
 .card-list {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* 卡片之间的间距 */
+  gap: 15px; 
 }
 
 .card-item {
@@ -334,7 +334,7 @@ textarea:focus {
   margin-bottom: 0.5em;
 }
 
-/* 引用块（AI 有时会用引用块来说出牌意箴言） */
+/* 引用块 */
 .markdown-body :deep(blockquote) {
   border-left: 3px solid #d4af37;
   margin: 1em 0;
@@ -346,7 +346,7 @@ textarea:focus {
   border-radius: 0 8px 8px 0;
 }
 
-/* === 光标动画 (需要用 :deep，因为它是动态拼接到 html 里的) === */
+/* === 光标动画 === */
 .markdown-body :deep(.cursor) {
   display: inline-block;
   width: 6px; /* 稍微加宽一点，像真的打字机 */
@@ -377,7 +377,7 @@ textarea:focus {
   background: #555;
 }
 
-/* --- 移动端适配 --- */
+/* 移动端适配 */
 @media (max-width: 768px) {
   .modal-overlay {
     align-items: flex-end; /* 让抽屉在手机端靠底部对齐 */
@@ -399,3 +399,9 @@ textarea:focus {
     opacity: 0;
   }
 }
+
+.card-img {
+  -webkit-touch-callout: none; /* 禁用系统默认菜单 */
+  -webkit-user-drag: none;    /* 禁用原生拖拽 */
+}
+

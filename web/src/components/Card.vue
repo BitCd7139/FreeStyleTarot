@@ -9,7 +9,7 @@
         height: height + 'px',
         zIndex: isActive ? 1000 : card.order 
       }"
-      @mousedown.stop="$emit('drag-start', card, $event)"
+      @pointerdown.stop="$emit('drag-start', card, $event)"
     >
       <!-- 卡牌图片 -->
       <div class="card-inner">
@@ -23,10 +23,10 @@
       </div>
   
       <!-- 四角缩放手柄 -->
-      <div class="resizer nw" @mousedown.stop="$emit('resize-start', $event)"></div>
-      <div class="resizer ne" @mousedown.stop="$emit('resize-start', $event)"></div>
-      <div class="resizer sw" @mousedown.stop="$emit('resize-start', $event)"></div>
-      <div class="resizer se" @mousedown.stop="$emit('resize-start', $event)"></div>
+      <div class="resizer nw" @pointerdown.stop="$emit('resize-start', $event)"></div>
+      <div class="resizer ne" @pointerdown.stop="$emit('resize-start', $event)"></div>
+      <div class="resizer sw" @pointerdown.stop="$emit('resize-start', $event)"></div>
+      <div class="resizer se" @pointerdown.stop="$emit('resize-start', $event)"></div>
     </div>
   </template>
   
@@ -67,12 +67,13 @@
   </script>
   
   <style scoped>
-/* ==================== 卡牌专属样式 ==================== */
+/* 卡牌专属样式 */
 .card-item {
   position: absolute;
   cursor: grab;
   background: transparent; 
   transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  touch-action: none;
 }
 
 .card-item.dragging {

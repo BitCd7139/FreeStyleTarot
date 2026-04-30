@@ -192,176 +192,150 @@ const closeModal = () => {
 </script>
 
 <style scoped>
+/* 0. 基础全局修正：确保所有元素的宽度计算包含 padding 和 border */
+* {
+  box-sizing: border-box;
+}
+
 /* 背景蒙版 */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85); /* 稍微加深 */
   backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  padding: 20px; /* 移动端边距 */
 }
 
-/* 弹窗主体：自适应屏幕高度 */
+/* 弹窗主体 */
 .modal-content.answer-modal {
   background: #151518;
   padding: 30px;
   border-radius: 20px;
-  width: 900px; 
-  max-width: 95vw;
-  height: 90vh; /* 占据屏幕 90% 高度 */
+  width: 900px;
+  max-width: 100%; /* 确保不超出屏幕 */
+  height: 90vh;
   max-height: 900px;
-  /* 金色主题边框 */
   border: 1px solid rgba(212, 175, 55, 0.4);
   box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.1);
-  
   display: flex;
   flex-direction: column;
-  background-attachment: scroll; 
-}
-
-/* 专门为截图输出定义的精美边框（金色边框） */
-.modal-content.answer-modal {
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  /* 增加一个稍微明显的内阴影，让牌阵和文字框更有层次感 */
-}
-
-.stage-container, .answer-box {
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  background: rgba(0, 0, 0, 0.4); /* 让背景深邃一点 */
+  overflow: hidden; /* 关键：防止整体内容溢出 */
 }
 
 .modal-header {
   text-align: center;
   margin-bottom: 20px;
-  flex-shrink: 0; /* 防止头部被压缩 */
+  flex-shrink: 0;
 }
 
-.modal-header h3 { 
-  margin: 0; 
-  font-size: 24px; 
-  color: #D4AF37; /* 金色标题 */
+.modal-header h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #D4AF37;
   letter-spacing: 2px;
 }
-.modal-hint { color: #888; font-size: 14px; margin-top: 5px; }
 
-/* Modal Body 负责包含牌阵和文字，自适应剩余高度 */
+/* Modal Body 负责包含牌阵和文字 */
 .modal-body {
   display: flex;
   flex-direction: column;
-  flex: 1; /* 撑满剩余空间 */
-  overflow: hidden; /* 防止溢出破坏 flex 布局 */
+  flex: 1; 
+  overflow: hidden; /* 极其重要：确保内部滚动条生效 */
   gap: 20px;
-  padding-bottom: 10px;
+  min-height: 0; /* 修复 Flexbox 内部溢出的经典 Bug */
 }
 
-/* === 迷你牌阵舞台样式 === */
+/* 牌阵容器 */
 .stage-container {
-  flex-shrink: 0; /* 牌阵高度固定，不被压缩 */
+  flex-shrink: 0;
   width: 100%;
-  height: 240px; 
+  height: 240px;
   background: #0a0a0c;
   border-radius: 12px;
-  /* 金色细边框提升识别度 */
   border: 1px solid rgba(212, 175, 55, 0.3);
   position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  overflow: hidden; /* 防止牌阵溢出 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* === 解析文本区域 === */
+/* 解析文本区域 */
 .answer-box {
-  flex: 1; /* 占据剩余的所有垂直空间 */
+  flex: 1;
   background: #0a0a0c;
   color: #e0e0e0;
-  /* 金色细边框提升识别度 */
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 12px;
   padding: 24px;
   font-size: 16px;
   line-height: 1.8;
-  text-align: left;
-  overflow-y: auto; /* 仅文字区可滚动 */
-  white-space: pre-wrap;
-  scroll-behavior: smooth;
+  overflow-y: auto;
+  word-break: break-word; /* 强制长单词换行，防止溢出 */
 }
 
-/* 优化滚动条样式 */
-.answer-box::-webkit-scrollbar { width: 8px; }
-.answer-box::-webkit-scrollbar-track { background: #111; border-radius: 4px;}
-.answer-box::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; opacity: 0.5;}
-
-.cursor {
-  display: inline-block;
-  width: 2px;
-  animation: blink 1s step-end infinite;
-  color: #D4AF37; /* 金色光标 */
-  margin-left: 2px;
-}
-
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-/* === 底部按钮组 === */
-/* 1. 底部容器：使用 flex 布局 */
+/* === 底部按钮组：修复按钮短的问题 === */
 .modal-footer {
   flex-shrink: 0;
   display: flex;
-  gap: 15px;          /* 按钮之间的间距 */
+  width: 100%; /* 确保容器撑满 */
+  gap: 12px;   /* 按钮间距 */
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;        /* 确保撑满宽度 */
 }
 
-/* 2. 核心修改：让所有按钮平分剩余空间 */
+/* 统一按钮样式 */
 .modal-footer button {
-  flex: 1;            /* 关键点：每个按钮占 1/3 宽度 */
-  justify-content: center; /* 内容居中 */
-  padding: 12px 0;    /* 统一上下高度 */
-  white-space: nowrap; /* 防止文字换行 */
-}
-
-/* 按钮通用样式 */
-button {
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  display: flex;
+  flex: 1;               /* 核心：让所有按钮平分宽度 */
+  display: flex;         /* 开启 flex 让图标和文字居中 */
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 0;       /* 增加上下高度 */
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;   /* 防止按钮内文字换行 */
 }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-button:not(:disabled):hover { transform: translateY(-2px); }
 
-/* 次要按钮（截图、复制） */
+/* 次要按钮样式 */
 .btn-secondary {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   color: #D4AF37;
-  border: 1px solid #D4AF37;
-}
-.btn-secondary:not(:disabled):hover {
-  background: rgba(212, 175, 55, 0.1);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.5);
 }
 
-/* 主要按钮（完成并关闭） */
+/* 主要按钮样式 */
 .btn-primary {
   background: linear-gradient(135deg, #D4AF37, #AA7700);
   color: #000;
   border: none;
-  font-weight: bold;
-  padding: 10px 36px;
-}
-.btn-primary:not(:disabled):hover {
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
 }
 
+/* 按钮悬停与禁用 */
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* 滚动条美化 */
+.answer-box::-webkit-scrollbar { width: 6px; }
+.answer-box::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
+
 /* 动画 */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

@@ -3,6 +3,7 @@ package main
 import (
 	"FreeStyleTarot/api"
 	"FreeStyleTarot/config"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -29,9 +30,9 @@ func main() {
 
 	r.POST("/api/predict", api.HandlePredict)
 
-	port := config.GlobalConfig.Server.Port
-	if port != "" && port[0] != ':' {
-		port = ":" + port
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 	err := r.Run(port)
 

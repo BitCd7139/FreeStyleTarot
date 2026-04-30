@@ -8,9 +8,12 @@ export default defineConfig({
     proxy: {
       // 这里的 /api 是一个匹配规则
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true,             // 允许跨域
       }
     }
+  },
+  build: {
+    outDir: 'dist', // 确保打包输出目录名为 dist
   }
 })

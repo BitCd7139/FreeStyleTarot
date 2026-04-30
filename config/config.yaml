@@ -1,4 +1,27 @@
-# 服务端配置
+name: my-cool-app
+services:
+  - name: backend
+    instance_count: 1
+    instance_size_slug: basic-xxs
+
+    source_dir: /
+    run_command: ./main  # 假设编译后的二进制文件名
+    build_command: go build -o main .
+    http_port: 8080      # 注意：代码里要监听环境变量 $PORT，DO 默认转发到 8080
+    routes:
+      - path: /api       # 建议后端所有接口以 /api 开头
+    envs:
+      - key: PORT
+        scope: RUN_TIME
+        value: "8080"
+
+static_sites:
+  - name: frontend
+    source_dir: /web
+    build_command: npm install && npm run build
+    output_dir: dist     # Vite 默认输出目录
+    routes:
+      - path: /          # 根路径访问前端
+
 server:
-  port: 8000          # 你希望的 8000 端口
   mode: "debug"       # 运行模式: debug 或 release

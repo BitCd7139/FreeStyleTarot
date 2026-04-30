@@ -1,0 +1,4 @@
+# 服务端配置
+server:
+  port: 8000          # 你希望的 8000 端口
+  mode: "debug"       # 运行模式: debug 或 release

@@ -99,7 +99,7 @@
   
   // 3. 背景与图片资源逻辑
   const backgroundStyle = computed(() => ({
-    backgroundImage: `url(${new URL('../assets/background.png', import.meta.url).href})`,
+    backgroundImage: `url(${new URL('../assets/background.webp', import.meta.url).href})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center'
   }));

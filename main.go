@@ -28,7 +28,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.POST("/api/predict", api.HandlePredict)
+	r.POST("/predict", api.HandlePredict)
 
 	port := os.Getenv("PORT")
 	if port == "" {

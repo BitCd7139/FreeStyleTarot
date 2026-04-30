@@ -1,3 +1,11 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+
 /* 遮罩层：透明度调低，不影响看牌阵，点击空白处可关闭 */
 .modal-overlay {
   position: fixed;

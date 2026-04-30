@@ -34,6 +34,10 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	if port[0] != ':' {
+		port = ":" + port
+	}
 	err := r.Run(port)
 
 	if err != nil {

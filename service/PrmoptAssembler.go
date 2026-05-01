@@ -1,17 +1,26 @@
 package service
 
 import (
-	"FreeStyleTarot/model/prmopt"
+	"FreeStyleTarot/model/prompt"
 	"FreeStyleTarot/model/request"
+	"FreeStyleTarot/storage"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"strings"
+	"sync"
 
 	"go.uber.org/zap"
 )
 
+var backgroundPrompt []byte
+var backgroundPromptOnce sync.Once
+
 func InputsAssembler(predict request.Predict) (string, error) {
-	output := backgroundPrmopt()
+	loadKnowledgeBase()
+	loadBackgroundPrompt()
+
+	output := string(backgroundPrompt) + "\n\n"
 
 	for _, card := range predict.Cards {
 		prompt, err := cardPromptAssembler(card)
@@ -22,12 +31,11 @@ func InputsAssembler(predict request.Predict) (string, error) {
 		output += prompt + "\n\n"
 	}
 
-	output += targetPrmopt()
+	output += targetPrompt()
 	return output, nil
 }
 
 func cardPromptAssembler(card request.CardInfo) (string, error) {
-	loadKnowledgeBase()
 
 	detail, exists := tarotMap[card.Name]
 	if !exists {
@@ -44,7 +52,7 @@ func cardPromptAssembler(card request.CardInfo) (string, error) {
 	}
 
 	// 4. 组装输出结构体
-	prompt := prmopt.CardPrmopt{
+	cardxml := prompt.CardPrompt{
 		Name:        detail.Name,
 		Meaning:     card.Meaning,
 		State:       state,
@@ -56,7 +64,7 @@ func cardPromptAssembler(card request.CardInfo) (string, error) {
 		Astrology:   detail.Astrology,
 	}
 
-	output, err := xml.MarshalIndent(prompt, "", "  ")
+	output, err := xml.MarshalIndent(cardxml, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -64,11 +72,28 @@ func cardPromptAssembler(card request.CardInfo) (string, error) {
 	return string(output), nil
 }
 
-func backgroundPrmopt() string {
-	return
+func loadBackgroundPrompt() {
+	entries, _ := storage.Assets.ReadDir(".")
+	for _, entry := range entries {
+		fmt.Println("Found file:", entry.Name())
+	}
+
+	backgroundPromptOnce.Do(func() {
+		data, err := storage.Assets.ReadFile("background_prompt.md")
+		if err != nil {
+			zap.S().Errorf("CRITICAL: Failed to read file: %v", err)
+			return
+		}
+		backgroundPrompt = data
+	})
+
+	if len(backgroundPrompt) == 0 {
+		zap.S().Warn("BackgroundPrompt is empty!")
+	} else {
+		zap.S().Debugw("BackgroundPrompt loaded", "content", string(backgroundPrompt))
+	}
 }
 
-func targetPrmopt() string {
-	return "### 目标：\n" +
-		"请根据以上牌面信息，结合提问者的问题和角色限制条件，进行塔罗牌解读。"
+func targetPrompt() string {
+	return "#请根据以上牌面信息，结合提问者的问题和角色限制条件，进行塔罗牌解读。"
 }

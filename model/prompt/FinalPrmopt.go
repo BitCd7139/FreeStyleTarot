@@ -1,12 +1,12 @@
-package prmopt
+package prompt
 
 import (
 	"encoding/xml"
 )
 
-type FinalPrmopt struct {
-	XMLname     xml.Name     `xml:"finalPrmopt"`
-	PrePrmopt   string       `xml:"prePrmopt"`
+type FinalPrompt struct {
+	XMLname     xml.Name     `xml:"finalPrompt"`
+	PrePrompt   string       `xml:"prePrompt"`
 	Question    string       `xml:"question"`
-	CardContext []CardPrmopt `xml:"cardContext>cardContext"`
+	CardContext []CardPrompt `xml:"cardContext>cardContext"`
 }

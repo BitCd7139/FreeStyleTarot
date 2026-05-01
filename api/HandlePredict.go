@@ -3,6 +3,9 @@ package api
 import (
 	"FreeStyleTarot/model/request"
 	"FreeStyleTarot/model/response"
+	"FreeStyleTarot/service"
+	"fmt"
+	"html"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +26,22 @@ func HandlePredict(c *gin.Context) {
 	// api_key = os.getenv("OPENAI_API_KEY")
 	// api_link = os.getnvar("OPENAI_API_LINK")
 
-	question := "### 提问：\n" + req.Question + "\n -------- \n"
-	test_answer := "\n你好。认真看完了你的倾诉，我非常能理解你此刻的心情。我们先从塔罗牌开始解构，这能极大地帮你理清目前的潜意识和客观现实。"
+	question := "### 提问：\n" + req.Question + "\n\n -------- \n\n"
 
-	result := question + test_answer
+	prompt, err := service.InputsAssembler(req)
+
+	if err != nil {
+		zap.S().Error(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if prompt != "" {
+		fmt.Println(prompt)
+	}
+
+	//result := question + answer
+	result := question + prompt
+	result = html.EscapeString(result)
 
 	resp := &response.Predict{
 		Answer: result,

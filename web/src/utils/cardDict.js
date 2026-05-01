@@ -1,7 +1,7 @@
 const TAROT_DICT = {
     "thefool": "愚者", "themagician": "魔术师", "thehighpriestess": "女祭司", 
     "theempress": "女皇", "theemperor": "皇帝", "thehierophant": "教皇", 
-    "TheLovers": "恋人", "thechariot": "战车", "thestrength": "力量", 
+    "thelovers": "恋人", "thechariot": "战车", "thestrength": "力量", 
     "thehermit": "隐士", "wheeloffortune": "命运之轮", "justice": "正义", 
     "thehangedman": "倒吊人", "death": "死神", "temperance": "节制", 
     "thedevil": "恶魔", "thetower": "塔", "thestar": "星星", 

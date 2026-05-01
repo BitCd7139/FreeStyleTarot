@@ -1,6 +1,6 @@
-package prmopt
+package prompt
 
-type CardPrmopt struct {
+type CardPrompt struct {
 	Name        string `xml:"name"`
 	Meaning     string `xml:"meaning"`
 	State       string `xml:"state"`

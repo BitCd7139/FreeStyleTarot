@@ -62,7 +62,7 @@
   </template>
   
   <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, watch } from 'vue';
   import axios from 'axios';
   import SubmitModal from './SubmitModal.vue';
   import AnswerModal from './AnswerModal.vue';
@@ -88,9 +88,12 @@
   const isSubmitDisabled = computed(() => false); 
   
   // 尺寸控制 (全局状态)
-  const baseWidth = ref(120); 
+  const STORAGE_KEY = 'tarot_card_base_width';
+  const savedWidth = localStorage.getItem(STORAGE_KEY);
+  const baseWidth = ref(savedWidth ? parseFloat(savedWidth) : 120); 
+
   const cardHeight = computed(() => baseWidth.value * ASPECT_RATIO);
-  
+
   // 交互状态
   const isResizing = ref(false);
   const isNearTrash = ref(false);
@@ -215,6 +218,7 @@
   const handlepointerUp = () => {
     if (isResizing.value) {
       isResizing.value = false;
+      localStorage.setItem(STORAGE_KEY, baseWidth.value.toString());
       return;
     }
   
@@ -271,9 +275,9 @@
     alert("请求超时或后端错误");
   }
   };
-  </script>
+</script>
   
-  <style scoped>
+<style scoped>
   /* 布局级与组件级样式 */
   .tarot-container {
     width: 100vw;

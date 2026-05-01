@@ -90,10 +90,10 @@ func loadBackgroundPrompt() {
 	if len(backgroundPrompt) == 0 {
 		zap.S().Warn("BackgroundPrompt is empty!")
 	} else {
-		zap.S().Debugw("BackgroundPrompt loaded", "content", string(backgroundPrompt))
+		//zap.S().Debugw("BackgroundPrompt loaded", "content", string(backgroundPrompt))
 	}
 }
 
 func targetPrompt() string {
-	return "#请根据以上牌面信息，结合提问者的问题和角色限制条件，进行塔罗牌解读。"
+	return "### Start your analysis based on above information, and provide a detailed answer to the question."
 }

@@ -205,7 +205,7 @@ const closeModal = () => {
   width: 900px;
   max-width: 100%; 
   height: 90vh;
-  max-height: 900px;
+  max-height: 1200px;
   border: 1px solid rgba(212, 175, 55, 0.4);
   box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.1);
   display: flex;
@@ -231,7 +231,7 @@ const closeModal = () => {
   margin-top: 5px;
 }
 
-/* === 修改点：Modal Body 现在接管滚动功能 === */
+/* Modal Body */
 .modal-body {
   flex: 1; 
   overflow-y: auto; /* 开启整体垂直滚动 */
@@ -262,7 +262,7 @@ const closeModal = () => {
   overflow-x: auto; /* 如果牌阵过宽，允许横向轻微滑动以免破坏布局 */
 }
 
-/* === 修改点：解析文本区域不再限制高度，随内容自然撑开 === */
+/* 解析文本区域随内容自然撑开 */
 .answer-box {
   background: #0a0a0c;
   color: #e0e0e0;
@@ -272,6 +272,8 @@ const closeModal = () => {
   font-size: 16px;
   line-height: 1.8;
   word-break: break-word; 
+  flex: 0 0 auto;
+  height: auto;
 }
 
 .modal-footer {

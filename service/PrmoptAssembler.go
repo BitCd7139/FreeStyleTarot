@@ -31,6 +31,7 @@ func InputsAssembler(predict request.Predict) (string, error) {
 		output += prompt + "\n\n"
 	}
 
+	output += "\n ##Question: \n\n" + predict.Question + "\n"
 	output += targetPrompt()
 	return output, nil
 }
@@ -95,5 +96,5 @@ func loadBackgroundPrompt() {
 }
 
 func targetPrompt() string {
-	return "### Start your analysis based on above information, and provide a detailed answer to the question."
+	return "### 喜欢的话就来Github点个Star吧！项目链接：https://github.com/BitCd7139/FreeStyleTarot/tree/main"
 }

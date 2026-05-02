@@ -32,36 +32,44 @@
           <!-- 新增：牌阵自动识别区域 -->
           <div class="form-group spread-detector" v-if="drawnCards && drawnCards.length > 0">
             <div class="detector-box">
-            <!-- 匹配中 / 询问态 -->
-            <template v-if="detectorState === 'asking'">
-              <div class="detector-content">
-                <span class="icon">✨</span>
-                <p>这是 <strong class="highlight-text">{{ currentMatchTemplate?.name }}</strong> 吗？</p>
-              </div>
-              <div class="detector-actions">
-                <!-- 应用了统一的按钮样式 -->
-                <button class="btn-mini btn-yes" @click="acceptSpread">确认</button>
-                <button class="btn-mini btn-no" @click="rejectSpread">换一个</button>
-              </div>
-            </template>
-            
-            <!-- 匹配成功态 -->
-            <template v-else-if="detectorState === 'accepted'">
-              <div class="detector-content">
-                <span class="icon">🔮</span>
-                <p>已应用牌阵模板：<strong class="highlight-text">{{ currentMatchTemplate?.name }}</strong></p>
-              </div>
-            </template>
+              <!-- 匹配中 / 询问态 / 预览态 -->
+              <template v-if="detectorState === 'asking' || detectorState === 'previewing'">
+                <div class="detector-content">
+                  <span class="icon">✨</span>
+                  <p v-if="detectorState === 'asking'">
+                    这是 <strong class="highlight-text">{{ currentMatchTemplate?.name }}</strong> 吗？
+                  </p>
+                  <p v-if="detectorState === 'previewing'">
+                    正在预览：<strong class="highlight-text">{{ currentMatchTemplate?.name }}</strong>，确认使用吗？
+                  </p>
+                </div>
+                <div class="detector-actions">
+                  <!-- 询问态：显示预览按钮 -->
+                  <button v-if="detectorState === 'asking'" class="btn-mini btn-yes" @click="previewSpread">预览</button>
+                  <!-- 预览态：显示确认按钮 -->
+                  <button v-if="detectorState === 'previewing'" class="btn-mini btn-yes" @click="acceptSpread">确认</button>
+                  
+                  <button class="btn-mini btn-no" @click="rejectSpread">换一个</button>
+                </div>
+              </template>
+              
+              <!-- 匹配成功态 -->
+              <template v-else-if="detectorState === 'accepted'">
+                <div class="detector-content">
+                  <span class="icon">🔮</span>
+                  <p>已应用牌阵模板：<strong class="highlight-text">{{ currentMatchTemplate?.name }}</strong></p>
+                </div>
+              </template>
 
-            <!-- 未匹配 / 自定义态 -->
-            <template v-else-if="detectorState === 'custom'">
-              <div class="detector-content">
-                <span class="icon">🌌</span>
-                <p class="custom-text">这可能是你的自定义牌阵，可以介绍一下吗？</p>
-              </div>
-            </template>
+              <!-- 未匹配 / 自定义态 -->
+              <template v-else-if="detectorState === 'custom'">
+                <div class="detector-content">
+                  <span class="icon">🌌</span>
+                  <p class="custom-text">这可能是你的自定义牌阵，可以介绍一下吗？</p>
+                </div>
+              </template>
+            </div>
           </div>
-        </div>
 
           <!-- 第二部分：自定义牌阵含义 -->
           <div class="form-group spread-definition">
@@ -106,19 +114,19 @@
   </Transition>
 </template>
   
-  <script setup>
+<script setup>
 import { defineModel, defineProps, defineEmits, ref, watch, computed } from 'vue';
 import MiniTarot from './MiniTarot.vue';
 
 // 引入解耦后的算法
 import { discretizeCards } from '../utils/cardGrid.js';
-import { SPREAD_TEMPLATES } from '../formation/index.js';
+import { SPREAD_TEMPLATES } from '../spread/index.js';
 import { rateLimiter } from '../utils/rateLimiter.js';  
-import { getName } from '../utils/cardDict.js';
+import { getName } from '../utils/cardInfo.js';
 
 const errors = ref({
   question: false,
-  meanings: [] // 存储每张牌是否有错的布尔值数组
+  meanings: []
 });
 
 const showModal = defineModel('showModal');
@@ -133,10 +141,11 @@ const props = defineProps({
 
 const emit = defineEmits(['submitToBackend']);
 
-// 状态机管理
+// 状态机管理：新增 'previewing' 状态
 const detectorState = ref('custom'); 
 const possibleMatches = ref([]);
 const currentMatchIndex = ref(0);
+const backupMeanings = ref(new Map()); // 用于存储预览前的自定义含义
 
 const currentMatchTemplate = computed(() => possibleMatches.value[currentMatchIndex.value] || null);
 
@@ -147,23 +156,17 @@ const runSpreadDetection = () => {
     return;
   }
 
-  // 1. 转为 12x12 网格矩阵
-  //console.log('原始卡牌数据:', drawnCards.value);
   const gridCards = discretizeCards(drawnCards.value, props.cardWidth, props.cardHeight, 12);
-  //console.log('网格化卡牌数据:', gridCards);
   
-  // 2. 遍历所有牌阵模板，只要 match() 返回非 null 的映射表，就认为是潜在匹配
   const matches = [];
   for (const tpl of SPREAD_TEMPLATES) {
-    // 基础过滤：卡牌数量必须一致
     if (tpl.cardCount !== gridCards.length) continue;
     
-    // 执行高阶拓扑匹配算法
     const mapping = tpl.match(gridCards);
     if (mapping) {
       matches.push({
         name: tpl.name,
-        mapping: mapping // 将返回的 {id, meaning} 映射表存下来
+        mapping: mapping 
       });
     }
   }
@@ -178,36 +181,74 @@ const runSpreadDetection = () => {
   }
 };
 
-// 同意应用牌阵
-const acceptSpread = () => {
+// 【步骤1】点击预览：将牌阵含义填入输入框供预览
+const previewSpread = () => {
   const matchObj = currentMatchTemplate.value;
   if (matchObj && matchObj.mapping) {
-    // 根据算法计算出的拓扑位置映射表，更新页面上卡牌的含义，与抽卡顺序无关
+    // 备份用户当前的输入，防止预览覆盖后无法找回
+    backupMeanings.value.clear();
+    drawnCards.value.forEach(card => {
+      backupMeanings.value.set(card.id, card.meaning || '');
+    });
+
+    // 填入计算出的牌阵含义
     drawnCards.value.forEach(card => {
       const mappingItem = matchObj.mapping.find(m => m.id === card.id);
       if (mappingItem) {
         card.meaning = mappingItem.meaning;
       }
     });
+    
+    // 进入预览状态
+    detectorState.value = 'previewing';
   }
+};
+
+// 【步骤2】同意应用牌阵
+const acceptSpread = () => {
+  // 因为 previewSpread 已经把含义赋值给 card 了，直接修改状态即可
   detectorState.value = 'accepted';
 };
 
 // 拒绝该牌阵，尝试下一个匹配或进入自定义
 const rejectSpread = () => {
+  // 如果当前是预览状态，还原之前的输入，避免污染下一个模板或自定义状态
+  if (detectorState.value === 'previewing') {
+    drawnCards.value.forEach(card => {
+      if (backupMeanings.value.has(card.id)) {
+        card.meaning = backupMeanings.value.get(card.id);
+      }
+    });
+  }
+
   if (currentMatchIndex.value < possibleMatches.value.length - 1) {
     currentMatchIndex.value++;
+    detectorState.value = 'asking'; // 退回到询问态，不自动预览
   } else {
     detectorState.value = 'custom';
   }
 };
 
-// 监听弹窗与卡牌坐标的变动
-watch([showModal, () => drawnCards.value], ([newShowModal]) => {
-  if (newShowModal) {
+// 提取卡牌的拓扑特征值（只有当卡牌的 id 或坐标发生变化时，才重新计算牌阵）
+const cardTopologyData = computed(() => {
+  if (!drawnCards.value) return '';
+  return drawnCards.value.map(c => `${c.id}_${c.x}_${c.y}`).join('|');
+});
+
+// 【核心修改】解除深度监听！防止输入 meaning 时导致牌阵识别被重置
+watch(showModal, (newVal) => {
+  if (newVal) {
+    runSpreadDetection();
+    errors.value = { question: false, meanings: [] };
+  }
+});
+
+// 仅在弹窗开启且卡牌位置真正改变时，才重新识别牌阵
+watch(cardTopologyData, (newVal, oldVal) => {
+  if (showModal.value && newVal !== oldVal) {
     runSpreadDetection();
   }
-}, { deep: true });
+});
 
 const submitToBackend = () => {
   const qLen = question.value ? question.value.trim().length : 0;
@@ -221,21 +262,8 @@ const submitToBackend = () => {
     return;
   }
 
-  //const limitStatus = rateLimiter.checkLimit();
-  //console.log('提交检查结果:', limitStatus);
-  // if (!limitStatus.allowed) {
-  //   alert(limitStatus.message);
-  //   return;
-  // }
   emit('submitToBackend');
-  //rateLimiter.recordSubmission();
 };
-
-watch(showModal, (newVal) => {
-  if (newVal) {
-    errors.value = { question: false, meanings: [] };
-  }
-});
 
 const getCardUrl = (name) => {
   if (name === 'back') return new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;

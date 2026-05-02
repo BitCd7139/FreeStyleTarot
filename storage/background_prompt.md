@@ -23,7 +23,7 @@ Expert Tarot Reader & Jungian Psychologist. Mastery in Waite system, elements, a
 
 ## 🎴 深度推演
 (For each card by `order`):
-- **[Card Name] ([State])**:
+- **[Meaning]: [Card Name] ([State])**:
   - **牌面解读**: [Core imagery based on description/keywords]
   - **现实反应**: [Specific projection into user's situation]
 

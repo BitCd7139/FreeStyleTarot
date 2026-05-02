@@ -62,19 +62,15 @@
   </template>
   
   <script setup>
-  import { ref, computed, watch } from 'vue';
+  import { ref, computed } from 'vue';
   import axios from 'axios';
   import SubmitModal from './SubmitModal.vue';
   import AnswerModal from './AnswerModal.vue';
   import Card from './Card.vue'; 
   import TrashCan from './TrashCan.vue';
+  import { allCardNames, ASPECT_RATIO } from '../utils/cardInfo.js';
 
-  
-  // 1. 基础配置
-  const ASPECT_RATIO = 1.75;
-  const allCardNames = ["aceofcups", "aceofpentacles", "aceofswords", "aceofwands", "death", "eightofcups", "eightofpentacles", "eightofswords", "eightofwands", "fiveofcups", "fiveofpentacles", "fiveofswords", "fiveofwands", "fourofcups", "fourofpentacles", "fourofswords", "fourofwands", "judgement", "justice", "kingofcups", "kingofpentacles", "kingofswords", "kingofwands", "knightofcups", "knightofpentacles", "knightofswords", "knightofwands", "nineofcups", "nineofpentacles", "nineofswords", "nineofwands", "pageofcups", "pageofpentacles", "pageofswords", "pageofwands", "queenofcups", "queenofpentacles", "queenofswords", "queenofwands", "sevenofcups", "sevenofpentacles", "sevenofswords", "sevenofwands", "sixofcups", "sixofpentacles", "sixofswords", "sixofwands", "temperance", "tenofcups", "tenofpentacles", "tenofswords", "tenofwands", "thechariot", "thedevil", "theemperor", "theempress", "thefool", "thehangedman", "thehermit", "thehierophant", "thehighpriestess", "thelovers", "themagician", "themoon", "thestar", "thestrength", "thesun", "thetower", "theworld", "threeofcups", "threeofpentacles", "threeofswords", "threeofwands", "twoofcups", "twoofpentacles", "twoofswords", "twoofwands", "wheeloffortune"];
-
-  // 2. 响应式状态
+  // 响应式状态
   const stage = ref(null);
   const drawnCards = ref([]);
   const availableCards = ref([...allCardNames]);
@@ -107,7 +103,7 @@
     backgroundPosition: 'center'
   }));
   
-  // 牌堆背面的图片URL（卡牌内部的获取逻辑已移至 Card.vue）
+  // 牌堆背面的图片URL
   const backCardUrl = new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;
 
   const removeCard = (cardId) => {

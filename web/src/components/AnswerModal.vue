@@ -251,7 +251,6 @@ const closeModal = () => {
 .stage-container {
   flex-shrink: 0;
   width: 100%;
-  height: 240px;
   background: #0a0a0c;
   border-radius: 12px;
   border: 1px solid rgba(212, 175, 55, 0.3);
@@ -259,7 +258,9 @@ const closeModal = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow-x: auto; /* 如果牌阵过宽，允许横向轻微滑动以免破坏布局 */
+  overflow-x: hidden;
+  flex: 0 0 auto;
+  height: auto;
 }
 
 /* 解析文本区域随内容自然撑开 */

@@ -60,3 +60,86 @@ export function discretizeCards(cards, cardWidth, cardHeight, { paddingFactor = 
     };
   });
 }
+
+
+/**
+ * 还原离散化后的卡牌坐标
+ * @param {Array} cards - 卡牌数组 (需包含 x, y, gridX, gridY, 以及可选的 order)
+ * @param {number} cardWidth - 单张卡牌的显示宽度
+ * @param {number} cardHeight - 单张卡牌的显示高度
+ * @param {Object} options - 配置项
+ * @param {number} options.paddingFactor - 边缘留白比例 (必须与离散化时一致)
+ * @param {number} options.offsetFactor - 重叠时的偏移比例 (默认0.1)
+ */
+export function recoverFromGrids(cards, cardWidth, cardHeight, { paddingFactor = 0.5, offsetFactor = 0.1 } = {}) {
+  if (!cards || cards.length === 0) return [];
+
+  // 1. 重新计算离散化时使用的边界 (保持与 discretizeCards 逻辑完全一致)
+  const xs = cards.map(c => c.x);
+  const ys = cards.map(c => c.y);
+  
+  let minX = Math.min(...xs);
+  let maxX = Math.max(...xs);
+  let minY = Math.min(...ys);
+  let maxY = Math.max(...ys);
+
+  const paddingX = cardWidth * paddingFactor;
+  const paddingY = cardHeight * paddingFactor;
+  
+  // 这里的 minX, maxX 是考虑了 padding 后的视觉包围盒边界
+  const minPaddedX = minX - paddingX;
+  const maxPaddedX = maxX + paddingX;
+  const minPaddedY = minY - paddingY;
+  const maxPaddedY = maxY + paddingY;
+
+  const totalWidth = maxPaddedX - minPaddedX;
+  const totalHeight = maxPaddedY - minPaddedY;
+  
+  const gridSize = 11; // 必须与离散化一致
+
+  // 2. 准备处理重叠逻辑
+  // 按照 order 排序，确保 order 大的在处理时能感知到前面的牌
+  const sortedCards = [...cards].sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  // 用于记录每个网格点已经放置了多少张牌
+  const gridOccupancy = {}; 
+  const offsetX = cardWidth * offsetFactor;
+  const offsetY = cardHeight * offsetFactor;
+
+  return sortedCards.map(c => {
+    let fixedX, fixedY;
+
+    // 3. 计算基础网格坐标
+    if (totalWidth < 1) {
+      fixedX = minX; // 如果没有宽度，回到原始中心
+    } else {
+      // 逆运算: ratio = gridX / gridSize
+      fixedX = minPaddedX + (c.gridX / gridSize) * totalWidth;
+    }
+
+    if (totalHeight < 1) {
+      fixedY = minY;
+    } else {
+      fixedY = minPaddedY + (c.gridY / gridSize) * totalHeight;
+    }
+
+    // 4. 处理重叠偏移
+    const gridKey = `${c.gridX}-${c.gridY}`;
+    const count = gridOccupancy[gridKey] || 0;
+    
+    // 如果该位置已有牌，根据 count 叠加偏移
+    const finalX = fixedX + count * offsetX;
+    const finalY = fixedY + count * offsetY;
+
+    // 更新计数器
+    gridOccupancy[gridKey] = count + 1;
+
+    return {
+      ...c,
+      fixedX: finalX,
+      fixedY: finalY,
+      // 增加 zIndex 建议，确保 order 大的在视觉上也处于上方
+      zIndex: (c.order || 0) + count 
+    };
+  });
+}

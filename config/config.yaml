@@ -1,2 +1,2 @@
 server:
-  mode: "release"       # 运行模式: debug 或 release
+  mode: "Release"       # 运行模式: debug 或 release

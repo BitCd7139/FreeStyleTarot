@@ -104,8 +104,13 @@
         <div class="modal-footer">
           <div class="modal-btns">
             <button class="cancel-btn" @click="showModal = false">返回调整</button>
-            <button class="confirm-btn" @click="submitToBackend" :disabled="isSubmitDisabled">
-              确认提交
+            <button 
+              class="confirm-btn" 
+              @click="HandleSubmit" 
+              :disabled="isSubmitDisabled || cdCount > 0 || isPending">
+              <template v-if="isPending">提交中...</template>
+              <template v-else-if="cdCount > 0">已提交 ({{ cd }}s)</template>
+              <template v-else>确认提交</template>
             </button>
           </div>
         </div>
@@ -123,7 +128,9 @@ import { discretizeCards } from '../utils/cardGrid.js';
 import { SPREAD_TEMPLATES } from '../spread/index.js';
 import { rateLimiter } from '../utils/rateLimiter.js';  
 import { getName } from '../utils/cardInfo.js';
+import { buttonCooldown } from '../utils/buttonCooldown.js';
 
+const { count: cdCount, isPending, start: startCD, stop: resetCD } = buttonCooldown(30);
 const errors = ref({
   question: false,
   meanings: []
@@ -139,13 +146,13 @@ const props = defineProps({
   cardHeight: { type: Number, default: 210 }
 });
 
-const emit = defineEmits(['submitToBackend']);
+const emit = defineEmits(['submit']);
 
 // 状态机管理：新增 'previewing' 状态
 const detectorState = ref('custom'); 
 const possibleMatches = ref([]);
 const currentMatchIndex = ref(0);
-const backupMeanings = ref(new Map()); // 用于存储预览前的自定义含义
+const backupMeanings = ref(new Map()); 
 
 const currentMatchTemplate = computed(() => possibleMatches.value[currentMatchIndex.value] || null);
 
@@ -181,7 +188,7 @@ const runSpreadDetection = () => {
   }
 };
 
-// 【步骤1】点击预览：将牌阵含义填入输入框供预览
+// 点击预览：将牌阵含义填入输入框供预览
 const previewSpread = () => {
   const matchObj = currentMatchTemplate.value;
   if (matchObj && matchObj.mapping) {
@@ -204,7 +211,7 @@ const previewSpread = () => {
   }
 };
 
-// 【步骤2】同意应用牌阵
+// 同意应用牌阵
 const acceptSpread = () => {
   // 因为 previewSpread 已经把含义赋值给 card 了，直接修改状态即可
   detectorState.value = 'accepted';
@@ -235,7 +242,7 @@ const cardTopologyData = computed(() => {
   return drawnCards.value.map(c => `${c.id}_${c.x}_${c.y}`).join('|');
 });
 
-// 【核心修改】解除深度监听！防止输入 meaning 时导致牌阵识别被重置
+// 防止输入 meaning 时导致牌阵识别被重置
 watch(showModal, (newVal) => {
   if (newVal) {
     runSpreadDetection();
@@ -250,20 +257,32 @@ watch(cardTopologyData, (newVal, oldVal) => {
   }
 });
 
-const submitToBackend = () => {
+const HandleSubmit = () => {
+  const limitStatus = rateLimiter.checkLimit();
+  if (!limitStatus.allowed) {
+    alert(limitStatus.message); 
+    return;
+  }    
+
   const qLen = question.value ? question.value.trim().length : 0;
   errors.value.question = qLen < 5 || qLen > 500;
   errors.value.meanings = drawnCards.value.map(card => {
     return !card.meaning || card.meaning.trim().length === 0;
   });
 
+  startCD();
   const hasMeaningError = errors.value.meanings.some(err => err);
   if (errors.value.question || hasMeaningError) {
     return;
   }
 
-  emit('submitToBackend');
+  rateLimiter.recordSubmission();
+  emit('submit');
 };
+defineExpose({
+  unlockSubmit: resetCD
+});
+
 
 const getCardUrl = (name) => {
   if (name === 'back') return new URL(`../assets/tarots/back.jpeg`, import.meta.url).href;

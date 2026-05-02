@@ -1,2 +1,6 @@
 APIs
 .idea
+./config/env_init.sh
+.env
+./web/.vscode
+./web/node_modules

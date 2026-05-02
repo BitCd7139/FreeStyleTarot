@@ -3,14 +3,22 @@ package main
 import (
 	"FreeStyleTarot/api"
 	"FreeStyleTarot/config"
+	"FreeStyleTarot/service"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
 func main() {
+	_ = godotenv.Load()
 	config.InitConfig()
+
+	llmInitErr := service.InitLlm()
+	if llmInitErr != nil {
+		panic(llmInitErr)
+	}
 
 	if config.GlobalConfig.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -28,7 +36,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.POST("/predict", api.HandlePredict)
+	r.POST("/predict", api.HandlePredictStream) // for test
 
 	port := os.Getenv("PORT")
 	if port == "" {

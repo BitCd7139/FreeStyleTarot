@@ -16,24 +16,27 @@ import (
 var backgroundPrompt []byte
 var backgroundPromptOnce sync.Once
 
-func InputsAssembler(predict request.Predict) (string, error) {
+func InputsAssembler(predict request.Predict) (systemMsg string, userMsg string, err error) {
 	loadKnowledgeBase()
 	loadBackgroundPrompt()
 
-	output := string(backgroundPrompt) + "\n\n"
+	// 1. 系统角色/背景 (System Prompt)
+	systemMsg = string(backgroundPrompt)
 
+	// 2. 用户输入内容 (User Prompt)
+	var userContent strings.Builder
 	for _, card := range predict.Cards {
-		prompt, err := cardPromptAssembler(card)
+		p, err := cardPromptAssembler(card)
 		if err != nil {
-			zap.S().Errorw("Failed to assemble card prompt for card %s: %v", card.Name, err)
+			zap.S().Errorw("Failed to assemble card prompt", "card", card.Name, "error", err)
 			continue
 		}
-		output += prompt + "\n\n"
+		userContent.WriteString(p + "\n\n")
 	}
 
-	output += "\n ##Question: \n\n" + predict.Question + "\n"
-	output += targetPrompt()
-	return output, nil
+	userContent.WriteString("\n## Question:\n" + predict.Question + "\n")
+
+	return systemMsg, userContent.String(), nil
 }
 
 func cardPromptAssembler(card request.CardInfo) (string, error) {

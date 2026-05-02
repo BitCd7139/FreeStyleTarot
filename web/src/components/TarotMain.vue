@@ -48,7 +48,8 @@
         :isSubmitDisabled="isSubmitDisabled"
         :cardWidth="baseWidth"     
         :cardHeight="cardHeight"  
-        @submitToBackend="submitToBackend"
+        ref="submitModalRef"
+        @submit="submitToBackend"
       />
 
       <AnswerModal 
@@ -63,12 +64,12 @@
   
   <script setup>
   import { ref, computed } from 'vue';
-  import axios from 'axios';
   import SubmitModal from './SubmitModal.vue';
   import AnswerModal from './AnswerModal.vue';
   import Card from './Card.vue'; 
   import TrashCan from './TrashCan.vue';
   import { allCardNames, ASPECT_RATIO } from '../utils/cardInfo.js';
+  import { predictStream } from '../utils/predictStream.js';
 
   // 响应式状态
   const stage = ref(null);
@@ -77,9 +78,11 @@
   const activeCard = ref(null);
   const showModal = ref(false);
   const question = ref('');
+  const submitModalRef = ref(null);
 
   const showAnswerModal = ref(false);
   const backendAnswer = ref('');
+  const isStreaming = ref(false);
   
   const isSubmitDisabled = computed(() => false); 
   
@@ -235,6 +238,7 @@
   
   // 6. 提交
   const submitToBackend = async () => {
+    try{
     const payload = {
       question: question.value,
       cardSize: { width: baseWidth.value, height: cardHeight.value },
@@ -247,28 +251,23 @@
         meaning: card.meaning.trim() 
       }))
     };
-    
   
+    backendAnswer.value = "";
+    showAnswerModal.value = true;
+    isStreaming.value = true;
+
     try {
-      console.log("Submitting payload:", payload);
-    
-      // 发送请求给后端
-      const response = await axios.post('/api/predict', payload);
-    
-      // 假设后端返回格式为 { data: { code: 200, answer: "命运的齿轮..." } }
-      if (response.data && response.data.code === 200) {
-      // 1. 关闭提交面板
-      showModal.value = false;
-      
-      // 2. 将后端内容传递给 AnswerModal 并打开它
-      backendAnswer.value = response.data.answer;
-      showAnswerModal.value = true;
-    } else {
-      alert("后端返回异常：" + (response.data.message || '未知错误'));
+      const stream = predictStream(payload);
+      for await (const chunk of stream) {
+        backendAnswer.value += chunk;
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isStreaming.value = false;
     }
-  } catch (error) {
-    console.error(error);
-    alert("请求超时或后端错误");
+  } catch (err){
+    submitModalRef.value?.unlockSubmit();
   }
   };
 </script>

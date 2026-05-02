@@ -5,7 +5,7 @@
 
 const STORAGE_KEY = 'tarot_submit_history';
 const MAX_COUNT = 5;
-const WINDOW_MS = 30 * 60 * 1000; // 30分钟的毫秒数
+const WINDOW_MS = 300 * 60 * 1000; 
 
 export const rateLimiter = {
   /**

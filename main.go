@@ -3,8 +3,8 @@ package main
 import (
 	"FreeStyleTarot/api"
 	"FreeStyleTarot/config"
-	"FreeStyleTarot/service"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -15,12 +15,7 @@ func main() {
 	_ = godotenv.Load()
 	config.InitConfig()
 
-	llmInitErr := service.InitLlm()
-	if llmInitErr != nil {
-		panic(llmInitErr)
-	}
-
-	if config.GlobalConfig.Server.Mode == "release" {
+	if strings.ToLower(config.GlobalConfig.Server.Mode) == "release" {
 		gin.SetMode(gin.ReleaseMode)
 
 		logconf := zap.NewDevelopmentConfig()

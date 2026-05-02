@@ -25,6 +25,12 @@ func HandlePredictStream(c *gin.Context) {
 		return
 	}
 
+	llmInitErr := service.InitLlm()
+	if llmInitErr != nil {
+		panic("Failed to initialize LLM client: " + llmInitErr.Error())
+		return
+	}
+
 	// 组装提示词
 	systemPrompt, userPrompt, err := service.InputsAssembler(req)
 	if err != nil {

@@ -5,66 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"sync"
 	"time"
 
 	"github.com/tmc/langchaingo/llms"
-	"github.com/tmc/langchaingo/llms/openai"
 	"go.uber.org/zap"
 )
-
-var (
-	apiKey      string
-	apiBaseUrl  string
-	apiModel    string
-	apiInitOnce sync.Once
-	apiInitErr  error
-
-	globalLlm   llms.Model
-	llmInitOnce sync.Once
-)
-
-func initApi() error {
-	apiInitOnce.Do(func() {
-		apiKey = os.Getenv("DEEPSEEK_API_KEY")
-		if apiKey == "" {
-			apiInitErr = fmt.Errorf("DEEPSEEK_API_KEY not set")
-			return
-		}
-		apiBaseUrl = os.Getenv("DEEPSEEK_API_BASE")
-		if apiBaseUrl == "" {
-			apiInitErr = fmt.Errorf("DEEPSEEK_API_BASE not set")
-			return
-		}
-		apiModel = os.Getenv("DEEPSEEK_API_MODEL")
-		if apiModel == "" {
-			apiInitErr = fmt.Errorf("DEEPSEEK_API_MODEL not set")
-			return
-		}
-	})
-	return apiInitErr
-}
-
-func InitLlm() error {
-	err := initApi()
-	if err != nil {
-		return err
-	}
-
-	llmInitOnce.Do(func() {
-		globalLlm, err = openai.New(
-			openai.WithToken(apiKey),
-			openai.WithBaseURL(apiBaseUrl),
-			openai.WithModel(apiModel),
-		)
-		if err != nil {
-			zap.S().Errorw("Failed to initialize DeepSeek client", "error", err)
-			return
-		}
-	})
-	return err
-}
 
 func CallDeepSeek(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
 

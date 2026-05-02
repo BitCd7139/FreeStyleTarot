@@ -261,7 +261,7 @@ const HandleSubmit = () => {
   const limitStatus = rateLimiter.checkLimit();
   if (!limitStatus.allowed) {
     alert(limitStatus.message); 
-    return;
+    //return;
   }    
 
   const qLen = question.value ? question.value.trim().length : 0;

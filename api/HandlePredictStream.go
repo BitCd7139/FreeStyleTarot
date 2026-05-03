@@ -20,7 +20,17 @@ func HandlePredictStream(c *gin.Context) {
 	}
 
 	// 二次校验输入
-	if len(req.Question) > 1000 {
+	if len(req.Question) > 2000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
+		return
+	}
+	for _, card := range req.Cards {
+		if len(card.Meaning) > 50 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
+			return
+		}
+	}
+	if len(req.Cards) > 15 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
 		return
 	}

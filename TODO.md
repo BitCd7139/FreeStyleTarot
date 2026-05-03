@@ -14,7 +14,3 @@ Rule: Do NOT just list keywords. Explain how the core energy of the card (from t
     "astrology": "Minor Arcana - Wands Energy"
   },
 ```
-
-```
-go embed
-```

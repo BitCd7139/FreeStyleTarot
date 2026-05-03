@@ -241,6 +241,7 @@
     try{
     const payload = {
       question: question.value,
+      model: submitModalRef.value.selectedModel,
       cardSize: { width: baseWidth.value, height: cardHeight.value },
       cards: drawnCards.value.map(card => ({
         order: card.order,
@@ -255,6 +256,8 @@
     backendAnswer.value = "";
     showAnswerModal.value = true;
     isStreaming.value = true;
+    
+    //console.log(payload)
 
     try {
       const stream = predictStream(payload);
@@ -267,6 +270,7 @@
       isStreaming.value = false;
     }
   } catch (err){
+    console.error("提交失败", err);
     submitModalRef.value?.unlockSubmit();
   }
   };

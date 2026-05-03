@@ -3,6 +3,7 @@ package request
 type Predict struct {
 	Question string     `json:"question"`
 	CardSize CardSize   `json:"cardSize"`
+	Model    string     `json:"model"`
 	Cards    []CardInfo `json:"cards"`
 }
 

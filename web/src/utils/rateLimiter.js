@@ -4,8 +4,8 @@
  */
 
 const STORAGE_KEY = 'tarot_submit_history';
-const MAX_COUNT = 5;
-const WINDOW_MS = 300 * 60 * 1000; 
+const MAX_COUNT = 2;
+const WINDOW_MS = 120 * 60 * 1000; 
 
 export const rateLimiter = {
   /**

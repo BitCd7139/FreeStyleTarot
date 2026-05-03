@@ -18,7 +18,7 @@ var backgroundPromptOnce sync.Once
 
 func InputsAssembler(predict request.Predict) (systemMsg string, userMsg string, err error) {
 	loadKnowledgeBase()
-	loadBackgroundPrompt()
+	loadBackgroundPrompt(predict.Model)
 
 	// 1. 系统角色/背景 (System Prompt)
 	systemMsg = string(backgroundPrompt)
@@ -76,14 +76,15 @@ func cardPromptAssembler(card request.CardInfo) (string, error) {
 	return string(output), nil
 }
 
-func loadBackgroundPrompt() {
+func loadBackgroundPrompt(name string) {
 	entries, _ := storage.Assets.ReadDir(".")
 	for _, entry := range entries {
 		fmt.Println("Found file:", entry.Name())
 	}
 
 	backgroundPromptOnce.Do(func() {
-		data, err := storage.Assets.ReadFile("background_prompt.md")
+		filename := "background_prompt_" + name + ".md"
+		data, err := storage.Assets.ReadFile(filename)
 		if err != nil {
 			zap.S().Errorf("CRITICAL: Failed to read file: %v", err)
 			return

@@ -100,7 +100,13 @@
           </div>
         </div>
 
-        <!-- 第三部分：操作按钮 -->
+        <!-- 第三部分：选择角色 -->
+        <RoleSelector 
+          v-model="selectedModel" 
+          :options="roleOptions" 
+        />
+
+        <!-- 第四部分：操作按钮 -->
         <div class="modal-footer">
           <div class="modal-btns">
             <button class="cancel-btn" @click="showModal = false">返回调整</button>
@@ -129,6 +135,18 @@ import { SPREAD_TEMPLATES } from '../spread/index.js';
 import { rateLimiter } from '../utils/rateLimiter.js';  
 import { getName } from '../utils/cardInfo.js';
 import { buttonCooldown } from '../utils/buttonCooldown.js';
+import RoleSelector from './RoleSelector.vue'; // 引入组件
+
+// 定义角色卡字典
+const roleOptions = {
+  "默认": "default",
+  "女友": "mate",
+  "女仆猫娘": "neko",
+  "雌小鬼（慎选）": "zako",
+};
+
+// 选中的模型值
+const selectedModel = ref(roleOptions["默认"]);
 
 const { count: cdCount, isPending, start: startCD, stop: resetCD } = buttonCooldown(30);
 const errors = ref({
@@ -260,9 +278,10 @@ watch(cardTopologyData, (newVal, oldVal) => {
 const HandleSubmit = () => {
   const limitStatus = rateLimiter.checkLimit();
   if (!limitStatus.allowed) {
-    alert(limitStatus.message); 
+    //alert(limitStatus.message); 
     //return;
   }    
+
 
   const qLen = question.value ? question.value.trim().length : 0;
   errors.value.question = qLen < 5 || qLen > 500;
@@ -276,11 +295,13 @@ const HandleSubmit = () => {
     return;
   }
 
+
   rateLimiter.recordSubmission();
   emit('submit');
 };
 defineExpose({
-  unlockSubmit: resetCD
+  unlockSubmit: resetCD,
+  selectedModel
 });
 
 

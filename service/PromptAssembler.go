@@ -13,24 +13,23 @@ import (
 )
 
 var (
-	// 全局缓存 map
-	backgroundPrompts map[string][]byte
-	// 确保初始化逻辑只运行一次
+	backgroundPrompts    map[string][]byte
+	globalPrompts        []byte
 	backgroundPromptOnce sync.Once
 )
 
 const (
-	prefix = "background_prompt_"
+	prefix = "prompt_"
 	suffix = ".md"
 )
 
 func InputsAssembler(predict request.Predict) (systemMsg string, userMsg string, err error) {
 	loadKnowledgeBase()
 
-	// 1. 系统角色/背景 (System Prompt)
-	systemMsg = string(getBackgroundPrompt(predict.Model))
+	// System Prompt
+	systemMsg = string(globalPrompts) + string(getBackgroundPrompt(predict.Model))
 
-	// 2. 用户输入内容 (User Prompt)
+	// User Prompt
 	var userContent strings.Builder
 	for _, card := range predict.Cards {
 		p, err := cardPromptAssembler(card)
@@ -94,6 +93,12 @@ func initBackgroundPrompts() {
 		}
 
 		zap.S().Debug("Starting to scan background prompts...")
+		data, err := storage.Assets.ReadFile("global_prompt.md")
+		if err != nil {
+			zap.S().Errorf("CRITICAL: Failed to scan background prompts: %v", err)
+			return
+		}
+		globalPrompts = data
 
 		for _, entry := range entries {
 			if entry.IsDir() {
@@ -105,7 +110,6 @@ func initBackgroundPrompts() {
 			// 3. 校验文件名格式：必须以 background_prompt_ 开头，以 .md 结尾
 			if strings.HasPrefix(filename, prefix) && strings.HasSuffix(filename, suffix) {
 
-				// 4. 提取 name 部分
 				// 比如 "background_prompt_customer_service.md" -> "customer_service"
 				name := strings.TrimPrefix(filename, prefix)
 				name = strings.TrimSuffix(name, suffix)

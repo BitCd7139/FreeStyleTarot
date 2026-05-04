@@ -119,7 +119,7 @@ func initBackgroundPrompts() {
 
 				// 6. 存入 Map
 				backgroundPrompts[name] = data
-				zap.S().Infow("Loaded background prompt", "name", name, "file", filename)
+				zap.S().Debugw("Loaded background prompt", "name", name, "file", filename)
 			}
 		}
 

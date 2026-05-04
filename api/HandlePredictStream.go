@@ -49,8 +49,6 @@ func HandlePredictStream(c *gin.Context) {
 		return
 	}
 
-	tokens := 0
-
 	// 2. 设置 SSE 响应头
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
@@ -104,7 +102,7 @@ func HandlePredictStream(c *gin.Context) {
 			return false
 		}
 
-		footerText := "\n\n---\n### 喜欢的话就来Github点个Star吧！项目链接：https://github.com/BitCd7139/FreeStyleTarot"
+		footerText := "\n\n---\n### 喜欢的话就来Github点个Star吧！项目链接：https://github.com/BitCd7139/FreeStyleTarot " + "\n ### 如果可以的话也来 B站点赞投个币吧！视频链接：https://www.bilibili.com/video/BV1gSReBJELE/"
 		if err := writeChunk(footerText); err != nil {
 			zap.S().Errorw("Failed to write footer", "error", err)
 			return false
@@ -115,6 +113,5 @@ func HandlePredictStream(c *gin.Context) {
 		zap.S().Infow("Stream session closed cleanly")
 		return false
 	})
-	zap.S().Infow("Predict input:", "model", req.Model, "question", req.Question)
-	zap.S().Infow("Tokens:", "token", tokens)
+	service.LogPredict(req)
 }

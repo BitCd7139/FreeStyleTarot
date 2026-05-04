@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -16,16 +17,19 @@ func main() {
 	config.InitConfig()
 
 	if strings.ToLower(config.GlobalConfig.Server.Mode) == "release" {
+		// --- 生产环境 ---
 		gin.SetMode(gin.ReleaseMode)
-
-		logconf := zap.NewDevelopmentConfig()
-		logconf.Encoding = "console"
-		logger, _ := logconf.Build()
+		logger, _ := zap.NewProduction()
 		zap.ReplaceGlobals(logger)
 
 	} else {
+		// --- 开发环境 ---
 		gin.SetMode(gin.DebugMode)
-		logger, _ := zap.NewProduction()
+		logconf := zap.NewDevelopmentConfig()
+		logconf.Encoding = "console"
+		logconf.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+		logger, _ := logconf.Build()
 		zap.ReplaceGlobals(logger)
 	}
 

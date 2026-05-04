@@ -26,7 +26,7 @@
               />
             </div>
 
-            <!-- 解析展示区域（不再单独带滚动条，靠父级滚动） -->
+            <!-- 解析展示区域 -->
             <div class="answer-box">
                 <div class="markdown-body" v-html="parsedAnswer"></div>
             </div>

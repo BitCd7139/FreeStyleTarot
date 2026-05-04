@@ -4,8 +4,8 @@
  */
 
 const STORAGE_KEY = 'tarot_submit_history';
-const MAX_COUNT = 2;
-const WINDOW_MS = 120 * 60 * 1000; 
+const MAX_COUNT = 1;
+const WINDOW_MS = 60 * 60 * 1000; 
 
 export const rateLimiter = {
   /**
@@ -30,11 +30,12 @@ export const rateLimiter = {
       
       return {
         allowed: false,
-        message: `为了占卜的严谨性，请勿频繁求问。请等待 ${waitMinutes} 分钟后再试。`
+        message: `Token不够用啦，请等待 ${waitMinutes} 分钟后再试。或者点击提交获取提示词，自己粘贴到 AI 里查看结果吧！`,
+        submitInfo: 'Prompt'
       };
     }
 
-    return { allowed: true };
+    return { allowed: true, submitInfo: 'Result' };
   },
 
   /**

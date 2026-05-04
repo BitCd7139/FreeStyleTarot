@@ -11,53 +11,24 @@ import (
 	"go.uber.org/zap"
 )
 
-func HandlePredictStream(c *gin.Context) {
+func HandlePrompt(c *gin.Context) {
 	var req request.Predict
 	if err := c.ShouldBindJSON(&req); err != nil {
-		zap.S().Errorw("Invalid request payload", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 二次校验输入
-	if len(req.Question) > 2000 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
-		return
-	}
-	for _, card := range req.Cards {
-		if len(card.Meaning) > 50 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
-			return
-		}
-	}
-	if len(req.Cards) > 15 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
-		return
-	}
-
-	llmInitErr := service.InitLlm()
-	if llmInitErr != nil {
-		panic("Failed to initialize LLM client: " + llmInitErr.Error())
-		return
-	}
-
-	// 组装提示词
+	// 1. 组装提示词
 	systemPrompt, userPrompt, err := service.InputsAssembler(req)
 	if err != nil {
-		zap.S().Errorw("Failed to assemble card prompt", "card", req, "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assemble prompt"})
 		return
 	}
 
-	tokens := 0
-
-	// 2. 设置 SSE 响应头
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 	c.Header("X-Accel-Buffering", "no")
-
-	clientContext := c.Request.Context()
 
 	// 3. 开始流式写入
 	c.Stream(func(w io.Writer) bool {
@@ -73,30 +44,11 @@ func HandlePredictStream(c *gin.Context) {
 			return nil
 		}
 
-		headerText := "## 🤔 提问\n" + req.Question + "\n\n---\n"
+		headerText := systemPrompt + userPrompt
 		if err := writeChunk(headerText); err != nil {
 			zap.S().Errorw("Failed to write header", "error", err)
 			return false
 		}
-
-		err := service.CallDeepSeekStream(clientContext, systemPrompt, userPrompt, func(chunk string) error {
-			// 检查客户端是否已断开，避免浪费后续生成的 Token
-			select {
-			case <-clientContext.Done():
-				return clientContext.Err()
-			default:
-				_, err := fmt.Fprintf(w, "data: %s\n\n", service.Trans2json(chunk))
-				if err != nil {
-					zap.S().Errorw("Failed to write to response stream", "error", err)
-					return err
-				}
-				// 强刷缓冲区
-				if flusher, ok := w.(http.Flusher); ok {
-					flusher.Flush()
-				}
-				return nil
-			}
-		})
 
 		if err != nil {
 			zap.S().Errorw("Streaming error occurred", "error", err)
@@ -116,5 +68,4 @@ func HandlePredictStream(c *gin.Context) {
 		return false
 	})
 	zap.S().Infow("Predict input:", "model", req.Model, "question", req.Question)
-	zap.S().Infow("Tokens:", "token", tokens)
 }

@@ -257,10 +257,11 @@
     showAnswerModal.value = true;
     isStreaming.value = true;
     
-    //console.log(payload)
+    console.log(payload);
+    console.log(submitModalRef.value.submitInfo.value);
 
     try {
-      const stream = predictStream(payload);
+      const stream = predictStream(payload, submitModalRef.value.submitInfo);
       for await (const chunk of stream) {
         backendAnswer.value += chunk;
       }

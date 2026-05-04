@@ -1,6 +1,6 @@
 import { ref, onUnmounted } from 'vue';
 
-export function buttonCooldown(initialSeconds = 30) {
+export function buttonCooldown(initialSeconds = 3) {
   const count = ref(0);
   const isPending = ref(false); 
   let timer = null;

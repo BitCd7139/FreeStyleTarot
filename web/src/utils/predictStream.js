@@ -1,5 +1,13 @@
-export async function* predictStream(payload) {
-    const response = await fetch('/api/predict', {
+export async function* predictStream(payload, submitInfo) {
+    let postdir = '/api/predict';
+    if (submitInfo == "Prompt") {
+      postdir = '/api/prompt'
+    }
+    else if (submitInfo == "Result") {
+      postdir = '/api/predict'
+    }
+  
+    const response = await fetch(postdir, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

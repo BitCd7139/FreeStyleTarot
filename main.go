@@ -31,7 +31,8 @@ func main() {
 
 	r := gin.Default()
 
-	r.POST("/predict", api.HandlePredictStream) // for test
+	r.POST("/predict", api.HandlePredictStream)
+	r.POST("/prompt", api.HandlePrompt)
 
 	port := os.Getenv("PORT")
 	if port == "" {

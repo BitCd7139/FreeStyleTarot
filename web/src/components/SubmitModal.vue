@@ -135,7 +135,7 @@ import { SPREAD_TEMPLATES } from '../spread/index.js';
 import { rateLimiter } from '../utils/rateLimiter.js';  
 import { getName } from '../utils/cardInfo.js';
 import { buttonCooldown } from '../utils/buttonCooldown.js';
-import RoleSelector from './RoleSelector.vue'; // 引入组件
+import RoleSelector from './RoleSelector.vue'; 
 
 // 定义角色卡字典
 const roleOptions = {
@@ -148,7 +148,7 @@ const roleOptions = {
 // 选中的模型值
 const selectedModel = ref(roleOptions["默认"]);
 
-const { count: cdCount, isPending, start: startCD, stop: resetCD } = buttonCooldown(30);
+const { count: cdCount, isPending, start: startCD, stop: resetCD } = buttonCooldown(3);
 const errors = ref({
   question: false,
   meanings: []
@@ -168,10 +168,11 @@ const emit = defineEmits(['submit']);
 
 // 状态机管理：新增 'previewing' 状态
 const detectorState = ref('custom'); 
+const submitInfo = ref('Result'); // 使用 ref 保证响应式
 const possibleMatches = ref([]);
 const currentMatchIndex = ref(0);
-const backupMeanings = ref(new Map()); 
-
+const backupMeanings = ref(new Map());
+ 
 const currentMatchTemplate = computed(() => possibleMatches.value[currentMatchIndex.value] || null);
 
 // 触发模式识别
@@ -278,10 +279,10 @@ watch(cardTopologyData, (newVal, oldVal) => {
 const HandleSubmit = () => {
   const limitStatus = rateLimiter.checkLimit();
   if (!limitStatus.allowed) {
-    //alert(limitStatus.message); 
+    alert(limitStatus.message); 
     //return;
   }    
-
+  submitInfo.value = limitStatus.submitInfo;
 
   const qLen = question.value ? question.value.trim().length : 0;
   errors.value.question = qLen < 5 || qLen > 500;
@@ -295,13 +296,15 @@ const HandleSubmit = () => {
     return;
   }
 
-
-  rateLimiter.recordSubmission();
+  if (submitInfo.value === 'Result') {
+    rateLimiter.recordSubmission();
+  }
   emit('submit');
 };
 defineExpose({
   unlockSubmit: resetCD,
-  selectedModel
+  selectedModel,
+  submitInfo
 });
 
 

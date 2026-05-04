@@ -6,22 +6,29 @@ import (
 	"FreeStyleTarot/storage"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
-var backgroundPrompt []byte
-var backgroundPromptOnce sync.Once
+var (
+	// 全局缓存 map
+	backgroundPrompts map[string][]byte
+	// 确保初始化逻辑只运行一次
+	backgroundPromptOnce sync.Once
+)
+
+const (
+	prefix = "background_prompt_"
+	suffix = ".md"
+)
 
 func InputsAssembler(predict request.Predict) (systemMsg string, userMsg string, err error) {
 	loadKnowledgeBase()
-	loadBackgroundPrompt(predict.Model)
 
 	// 1. 系统角色/背景 (System Prompt)
-	systemMsg = string(backgroundPrompt)
+	systemMsg = string(getBackgroundPrompt(predict.Model))
 
 	// 2. 用户输入内容 (User Prompt)
 	var userContent strings.Builder
@@ -76,27 +83,59 @@ func cardPromptAssembler(card request.CardInfo) (string, error) {
 	return string(output), nil
 }
 
-func loadBackgroundPrompt(name string) {
-	entries, _ := storage.Assets.ReadDir(".")
-	for _, entry := range entries {
-		fmt.Println("Found file:", entry.Name())
-	}
-
+func initBackgroundPrompts() {
 	backgroundPromptOnce.Do(func() {
-		filename := "background_prompt_" + name + ".md"
-		data, err := storage.Assets.ReadFile(filename)
+		backgroundPrompts = make(map[string][]byte)
+
+		entries, err := storage.Assets.ReadDir(".")
 		if err != nil {
-			zap.S().Errorf("CRITICAL: Failed to read file: %v", err)
+			zap.S().Errorf("CRITICAL: Failed to read assets directory: %v", err)
 			return
 		}
-		backgroundPrompt = data
-	})
 
-	if len(backgroundPrompt) == 0 {
-		zap.S().Warn("BackgroundPrompt is empty!")
-	} else {
-		//zap.S().Debugw("BackgroundPrompt loaded", "content", string(backgroundPrompt))
+		zap.S().Debug("Starting to scan background prompts...")
+
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+
+			filename := entry.Name()
+
+			// 3. 校验文件名格式：必须以 background_prompt_ 开头，以 .md 结尾
+			if strings.HasPrefix(filename, prefix) && strings.HasSuffix(filename, suffix) {
+
+				// 4. 提取 name 部分
+				// 比如 "background_prompt_customer_service.md" -> "customer_service"
+				name := strings.TrimPrefix(filename, prefix)
+				name = strings.TrimSuffix(name, suffix)
+
+				// 5. 读取文件内容
+				data, err := storage.Assets.ReadFile(filename)
+				if err != nil {
+					zap.S().Errorf("Failed to read file %s: %v", filename, err)
+					continue
+				}
+
+				// 6. 存入 Map
+				backgroundPrompts[name] = data
+				zap.S().Infow("Loaded background prompt", "name", name, "file", filename)
+			}
+		}
+
+		zap.S().Infof("Initialization complete. Loaded %d prompts.", len(backgroundPrompts))
+	})
+}
+
+func getBackgroundPrompt(name string) []byte {
+	initBackgroundPrompts()
+
+	if data, ok := backgroundPrompts[name]; ok {
+		return data
 	}
+
+	zap.S().Warnw("Prompt not found", "name", name)
+	return nil
 }
 
 func targetPrompt() string {

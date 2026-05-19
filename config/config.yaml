@@ -1,0 +1,12 @@
+server:
+  mode: "Release" # debug 或 release
+
+agents:
+  spread_analyst:
+    max_tokens: 4096
+    temperature: 0.6
+  persona_advisor:
+    max_tokens: 8192
+    temperature: 0.7
+  # Agent B 牌阵要点：每张牌描述/牌义各截断的最大 rune 数
+  brief_material_max_runes: 500

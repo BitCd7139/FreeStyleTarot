@@ -1,0 +1,53 @@
+server:
+  mode: "Release" # debug 或 release
+
+auth:
+  force_login: true   # false 时跳过登录，直接进入 TarotMain
+  skip_verify: false   # true 时架空邮件验证码（不发信、任意验证码可过）
+
+announcement:
+  enabled: true
+  title: "系统公告"
+  content: |
+    <div style="text-indent: 2em;">
+
+    欢迎使用 **FreeStyleTarot**！
+
+    一直以来都感谢大家的支持。**FreeStyleTarot** 最初只是个避免我手动给AI输入提示词的玩具，但随着迭代已经具有了一定的实用性，也拥有了一定数量的用户，你们的支持是我持续维护这个项目的动力。
+    
+    接下来的更新里，我计划加入用户管理功能，提供保存记录的功能，以及无限制占卜等更高的权限。虽然我一直设置了查询频率限制，但最近API额度真的要见底了，所以我可能会提供付费功能。尽管如此，我会保证免费用户也能像以前一样正常使用，至少提供一个免费版本。
+
+    由于这个项目目前只有我一个人在维护，最近比较忙，只有周末能做一点更新，更新频率这一点请见谅。我尽量抽时间来维护它。 
+
+    如果大家有任何问题或建议，欢迎在GitHub上提Issue，或者直接在B站发私信。也欢迎大家Star这个项目，让更多的人知道这个项目。
+
+    祝占卜愉快 ✨ 
+
+    </div>
+
+    <div align="right">
+
+    2026.6.6
+    
+    B站id：-AnonB-
+
+    </div>
+
+    ---
+
+    **版本更新说明**
+
+    - 2026.6.14: 添加查看提问历史记录功能
+    - 2026.6.9: 优化牌阵分析动画
+    - 2026.6.8: 添加找回密码功能
+    - 2026.6.6: 发布公告功能，更新公告内容
+
+agents:
+  spread_analyst:
+    max_tokens: 4096
+    temperature: 0.6
+  persona_advisor:
+    max_tokens: 8192
+    temperature: 0.7
+  # Agent B 牌阵要点：每张牌描述/牌义各截断的最大 rune 数
+  brief_material_max_runes: 500

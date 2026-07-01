@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+        <!-- 水晶球紫色渐变（中心亮紫，边缘深紫） -->
+        <radialGradient id="purpleBall" cx="50%" cy="45%" r="50%">
+            <stop offset="0%" style="stop-color:#b767ff;stop-opacity:0.9" />
+            <stop offset="60%" style="stop-color:#6a1b9a;stop-opacity:0.8" />
+            <stop offset="100%" style="stop-color:#2a085c;stop-opacity:0.95" />
+        </radialGradient>
+
+        <!-- 黑金底座渐变 -->
+        <linearGradient id="blackBase" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#2c2c2c" />
+            <stop offset="50%" style="stop-color:#141414" />
+            <stop offset="100%" style="stop-color:#050505" />
+        </linearGradient>
+
+        <!-- 黄金色渐变（用于底座包边和星星） -->
+        <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#ffe259" />
+            <stop offset="100%" style="stop-color:#ffa751" />
+        </linearGradient>
+    </defs>
+
+    <!-- 底部阴影 -->
+    <ellipse cx="50" cy="85" rx="30" ry="8" fill="rgba(0,0,0,0.3)" />
+
+    <!-- 黑金底座 -->
+    <!-- 梯形底座 -->
+    <path d="M25 85 L75 85 L85 96 L15 96 Z" fill="url(#blackBase)" stroke="url(#gold)" stroke-width="0.5" />
+    <!-- 底座上边缘圆柱 -->
+    <rect x="22" y="78" width="56" height="8" rx="3" fill="url(#blackBase)" />
+    <!-- 底座黄金装饰线 -->
+    <line x1="24" y1="82" x2="76" y2="82" stroke="url(#gold)" stroke-width="1.5" />
+
+    <!-- 水晶球主体 -->
+    <!-- 黄金外边框，让暗色球体在黑夜模式浏览器下也能剥离出来 -->
+    <circle cx="50" cy="45" r="40" fill="url(#purpleBall)" stroke="url(#gold)" stroke-width="1.5" />
+
+    <!-- 内部金色魔法光芒（十字星和闪烁点） -->
+    <!-- 中心大魔法星 -->
+    <path d="M50 25 Q50 45 30 45 Q50 45 50 65 Q50 45 70 45 Q50 45 50 25 Z" fill="url(#gold)" />
+    <!-- 小闪烁点 -->
+    <circle cx="33" cy="33" r="2" fill="#ffe259" />
+    <circle cx="65" cy="55" r="1.5" fill="#ffe259" />
+    <circle cx="35" cy="58" r="1" fill="#ffefa0" />
+
+    <!-- 玻璃高光反射（白色透明） -->
+    <!-- 顶部主高光 -->
+    <path d="M30 22 Q 40 12 58 16" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.5" />
+    <!-- 右下侧淡高光 -->
+    <path d="M72 60 A 32 32 0 0 1 60 72" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.2" />
+</svg>

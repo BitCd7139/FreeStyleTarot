@@ -1,0 +1,7 @@
+APIs
+.idea
+.env
+./web/.vscode
+./web/node_modules
+./web/android
+.cursor

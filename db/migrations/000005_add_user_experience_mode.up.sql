@@ -1,0 +1,2 @@
+ALTER TABLE users
+  ADD COLUMN experience_mode VARCHAR(16) DEFAULT NULL;

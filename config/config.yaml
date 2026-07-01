@@ -1,0 +1,65 @@
+server:
+  mode: "Release" # debug 或 release
+
+auth:
+  force_login: true   # false 时跳过登录，直接进入 TarotMain
+  skip_verify: false   # true 时架空邮件验证码（不发信、任意验证码可过）
+
+announcement:
+  enabled: true
+  title: "系统公告"
+  content: |
+    <div style="text-indent: 2em;">
+
+    欢迎使用 **FreeStyleTarot**！
+
+    一直以来都感谢大家的支持。**FreeStyleTarot** 最初只是个避免我手动给AI输入提示词的玩具，但随着迭代已经具有了一定的实用性，也拥有了一定数量的用户，你们的支持是我持续维护这个项目的动力。
+    
+    如果需要无限频率提问，可以填自己的API Key。填自己的API就可以用更好的配置提问，自然会有更好的回答效果。不知道怎么填怎么买可以私信我要 VIP，我大概会帮你开，因为现在VIP除了无限频率提问还没什么别的用处（
+
+    其他任何问题或建议，欢迎在GitHub上提Issue，或者直接在B站发私信。也欢迎大家Star这个项目，让更多的人知道这个项目。
+
+    祝占卜愉快 ✨ 
+
+    </div>
+
+    <div align="right">
+
+    2026.6.6
+    
+    B站id：-AnonB-
+
+    </div>
+
+    ---
+
+    **版本更新说明**
+
+    - 2026.6.23: 添加人设卡 & 优化卡背
+    - 2026.6.22: 优化结果展示界面
+    - 2026.6.21: 优化思维链，提升分析质量
+    - 2026.6.19: 添加自定义API接口设置 
+    - 2026.6.16: 修复部分历史记录无法保存的问题
+    - 2026.6.15: 优化交互体验，包括意图拆解和分段流式输出
+    - 2026.6.14: 添加查看提问历史记录功能
+    - 2026.6.9: 优化牌阵分析动画
+    - 2026.6.8: 添加找回密码功能
+    - 2026.6.6: 发布公告功能，更新公告内容
+
+agents:
+  intent_clarifier:
+    max_tokens: 2048
+    temperature: 0.4
+  spread_analyst:
+    max_tokens: 8192
+    temperature: 0.6
+  advisor:
+    max_tokens: 4096
+    temperature: 0.5
+  persona:
+    max_tokens: 4096
+    temperature: 0.3
+  # Agent B 牌阵要点：每张牌描述/牌义各截断的最大 rune 数
+  brief_material_max_runes: 500
+
+
